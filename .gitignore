@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Generated from schema.sql, the migrations, runtime.js and the curriculum packs so
+# a standalone binary has them with no repository beside it. `npm install` rebuilds
+# it via the prepare script; committing it would only let it drift from its sources.
+src/generated/
+
+# Never commit a child's record.
+*.db
+*.db-wal
+*.db-shm
+record.json
+.primer/

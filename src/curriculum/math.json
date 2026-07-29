@@ -1,0 +1,492 @@
+{
+  "domain": "math",
+  "version": "0.1",
+  "note": "K-2 arithmetic and number sense. Prerequisites encode teaching order, not age.",
+  "skills": [
+    {
+      "id": "cc_count_to_10",
+      "strand": "counting",
+      "name": "Counts to 10",
+      "description": "Rote sequence. Says the number words in order.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "recite", "prompt": "Count as high as you can." }
+    },
+    {
+      "id": "cc_subitize_5",
+      "strand": "counting",
+      "name": "Sees small amounts without counting",
+      "description": "Knows three dots is three at a glance. Underrated and load-bearing.",
+      "grade_band": "pk",
+      "ordinal": 15,
+      "probe": { "type": "flash", "prompt": "How many? Quick, do not count.", "max": 5, "display_ms": 800 }
+    },
+    {
+      "id": "cc_one_to_one",
+      "strand": "counting",
+      "name": "Counts objects one at a time",
+      "description": "One number word per object, no skips, no doubles.",
+      "grade_band": "pk",
+      "ordinal": 20,
+      "prereq": ["cc_count_to_10"],
+      "probe": { "type": "count_objects", "range": [3, 10] }
+    },
+    {
+      "id": "cc_cardinality",
+      "strand": "counting",
+      "name": "Knows the last number counted is how many there are",
+      "description": "Ask 'how many' after they count. If they recount, cardinality has not landed.",
+      "grade_band": "pk",
+      "ordinal": 30,
+      "prereq": ["cc_one_to_one"],
+      "probe": { "type": "count_objects", "follow_up": "So how many are there altogether?" }
+    },
+    {
+      "id": "cc_count_to_20",
+      "strand": "counting",
+      "name": "Counts to 20",
+      "description": "The teens are irregular in English and are where counting breaks.",
+      "grade_band": "k",
+      "ordinal": 40,
+      "prereq": ["cc_count_to_10"],
+      "probe": { "type": "recite", "range": [1, 20] }
+    },
+    {
+      "id": "cc_numeral_write_0_20",
+      "strand": "counting",
+      "name": "Writes numerals 0-20",
+      "grade_band": "k",
+      "ordinal": 45,
+      "prereq": ["cc_count_to_20"],
+      "probe": { "type": "write", "prompt": "Write the number {n}.", "range": [0, 20] }
+    },
+    {
+      "id": "cc_count_to_100_by1",
+      "strand": "counting",
+      "name": "Counts to 100 by ones",
+      "grade_band": "k",
+      "ordinal": 50,
+      "prereq": ["cc_count_to_20"],
+      "probe": { "type": "recite", "range": [1, 100], "allow_start_from": true }
+    },
+    {
+      "id": "cc_count_by_10s",
+      "strand": "counting",
+      "name": "Counts by tens",
+      "grade_band": "k",
+      "ordinal": 55,
+      "prereq": ["cc_count_to_100_by1"],
+      "probe": { "type": "recite", "step": 10, "range": [10, 100] }
+    },
+    {
+      "id": "cc_compare_sets",
+      "strand": "counting",
+      "name": "Says which group has more",
+      "grade_band": "k",
+      "ordinal": 60,
+      "prereq": ["cc_cardinality"],
+      "probe": { "type": "compare", "prompt": "Which has more? How many more?" }
+    },
+    {
+      "id": "cc_count_by_2s_5s",
+      "strand": "counting",
+      "name": "Counts by twos and fives",
+      "grade_band": "1",
+      "ordinal": 65,
+      "prereq": ["cc_count_by_10s"],
+      "probe": { "type": "recite", "steps": [2, 5], "range": [2, 50] }
+    },
+    {
+      "id": "cc_ordinal_numbers",
+      "strand": "counting",
+      "name": "Uses first, second, third",
+      "grade_band": "k",
+      "ordinal": 70,
+      "prereq": ["cc_cardinality"],
+      "probe": { "type": "point", "prompt": "Which one is third in line?" }
+    },
+
+    {
+      "id": "pv_teen_numbers",
+      "strand": "place_value",
+      "name": "Understands teen numbers as ten and some more",
+      "description": "14 is 10 and 4. This is the hinge of the whole place value system.",
+      "grade_band": "k",
+      "ordinal": 10,
+      "prereq": ["cc_count_to_20"],
+      "probe": { "type": "decompose", "prompt": "Show me {n} using a ten and some ones.", "range": [11, 19] }
+    },
+    {
+      "id": "pv_tens_ones",
+      "strand": "place_value",
+      "name": "Reads two-digit numbers as tens and ones",
+      "grade_band": "1",
+      "ordinal": 20,
+      "prereq": ["pv_teen_numbers", "cc_count_by_10s"],
+      "probe": { "type": "decompose", "prompt": "How many tens and how many ones in {n}?", "range": [20, 99] }
+    },
+    {
+      "id": "pv_skip_on_number_line",
+      "strand": "place_value",
+      "name": "Jumps by tens on a number line",
+      "grade_band": "1",
+      "ordinal": 25,
+      "prereq": ["cc_count_by_10s"],
+      "probe": { "type": "number_line", "start_range": [3, 60], "step": 10 }
+    },
+    {
+      "id": "pv_compare_2digit",
+      "strand": "place_value",
+      "name": "Compares two-digit numbers",
+      "description": "Watch for 'more digits means bigger' surviving into two-digit comparison.",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["pv_tens_ones"],
+      "probe": { "type": "compare", "prompt": "Which is bigger, {a} or {b}? Use < = >.", "range": [10, 99] }
+    },
+    {
+      "id": "pv_ten_more_less",
+      "strand": "place_value",
+      "name": "Finds ten more and ten less in their head",
+      "grade_band": "1",
+      "ordinal": 35,
+      "prereq": ["pv_tens_ones"],
+      "probe": { "type": "mental", "prompt": "What is ten more than {n}?", "range": [10, 89] }
+    },
+    {
+      "id": "pv_hundreds",
+      "strand": "place_value",
+      "name": "Reads three-digit numbers",
+      "grade_band": "2",
+      "ordinal": 40,
+      "prereq": ["pv_tens_ones"],
+      "probe": { "type": "decompose", "prompt": "How many hundreds, tens, and ones in {n}?", "range": [100, 999] }
+    },
+
+    {
+      "id": "op_add_within_5",
+      "strand": "operations",
+      "name": "Adds within 5",
+      "grade_band": "k",
+      "ordinal": 10,
+      "prereq": ["cc_cardinality", "cc_subitize_5"],
+      "probe": { "type": "arithmetic", "op": "+", "max_sum": 5 }
+    },
+    {
+      "id": "op_sub_within_5",
+      "strand": "operations",
+      "name": "Subtracts within 5",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["op_add_within_5"],
+      "probe": { "type": "arithmetic", "op": "-", "max_minuend": 5 }
+    },
+    {
+      "id": "op_add_within_10",
+      "strand": "operations",
+      "name": "Adds within 10",
+      "grade_band": "k",
+      "ordinal": 30,
+      "prereq": ["op_add_within_5"],
+      "probe": { "type": "arithmetic", "op": "+", "max_sum": 10 }
+    },
+    {
+      "id": "op_sub_within_10",
+      "strand": "operations",
+      "name": "Subtracts within 10",
+      "grade_band": "k",
+      "ordinal": 40,
+      "prereq": ["op_add_within_10", "op_sub_within_5"],
+      "probe": { "type": "arithmetic", "op": "-", "max_minuend": 10 }
+    },
+    {
+      "id": "op_commutative",
+      "strand": "operations",
+      "name": "Knows 3+5 and 5+3 are the same",
+      "description": "Halves the facts that need memorizing. Worth teaching explicitly.",
+      "grade_band": "1",
+      "ordinal": 45,
+      "prereq": ["op_add_within_10"],
+      "probe": { "type": "reason", "prompt": "If you know 3+5=8, what else do you know?" }
+    },
+    {
+      "id": "op_make_ten",
+      "strand": "operations",
+      "name": "Makes ten to add",
+      "description": "8+5 becomes 8+2+3. The strategy that unlocks addition within 20.",
+      "grade_band": "1",
+      "ordinal": 50,
+      "prereq": ["op_add_within_10", "pv_teen_numbers"],
+      "probe": { "type": "strategy", "prompt": "Use a ten to solve {a}+{b}.", "pairs": [[8, 5], [9, 4], [7, 6]] }
+    },
+    {
+      "id": "op_doubles",
+      "strand": "operations",
+      "name": "Knows doubles to 10+10",
+      "grade_band": "1",
+      "ordinal": 55,
+      "prereq": ["op_add_within_10"],
+      "probe": { "type": "arithmetic", "op": "+", "form": "n+n", "range": [1, 10] }
+    },
+    {
+      "id": "op_near_doubles",
+      "strand": "operations",
+      "name": "Uses doubles to solve near doubles",
+      "description": "7+8 is 7+7 and one more.",
+      "grade_band": "1",
+      "ordinal": 58,
+      "prereq": ["op_doubles"],
+      "probe": { "type": "strategy", "pairs": [[6, 7], [8, 9], [4, 5]] }
+    },
+    {
+      "id": "op_add_within_20",
+      "strand": "operations",
+      "name": "Adds within 20",
+      "grade_band": "1",
+      "ordinal": 60,
+      "prereq": ["op_make_ten"],
+      "probe": { "type": "arithmetic", "op": "+", "max_sum": 20 }
+    },
+    {
+      "id": "op_missing_addend",
+      "strand": "operations",
+      "name": "Solves 7 + __ = 12",
+      "description": "The bridge between addition and subtraction.",
+      "grade_band": "1",
+      "ordinal": 65,
+      "prereq": ["op_add_within_20"],
+      "probe": { "type": "arithmetic", "form": "a+?=c", "max_sum": 20 }
+    },
+    {
+      "id": "op_sub_within_20",
+      "strand": "operations",
+      "name": "Subtracts within 20",
+      "grade_band": "1",
+      "ordinal": 70,
+      "prereq": ["op_add_within_20", "op_sub_within_10"],
+      "probe": { "type": "arithmetic", "op": "-", "max_minuend": 20 }
+    },
+    {
+      "id": "op_fact_fluency_10",
+      "strand": "operations",
+      "name": "Recalls facts within 10 quickly",
+      "description": "Fluent means about 3 seconds, from memory, without visible counting.",
+      "grade_band": "1",
+      "ordinal": 75,
+      "prereq": ["op_add_within_10", "op_sub_within_10"],
+      "probe": { "type": "arithmetic", "max_sum": 10, "fluent_ms": 3000 }
+    },
+    {
+      "id": "op_word_problem_1step",
+      "strand": "operations",
+      "name": "Solves one-step word problems",
+      "grade_band": "1",
+      "ordinal": 85,
+      "prereq": ["op_add_within_20"],
+      "probe": { "type": "word_problem", "steps": 1, "structures": ["join", "separate", "compare"], "use_interests": true }
+    },
+    {
+      "id": "op_fact_fluency_20",
+      "strand": "operations",
+      "name": "Recalls facts within 20 quickly",
+      "grade_band": "2",
+      "ordinal": 80,
+      "prereq": ["op_add_within_20", "op_sub_within_20"],
+      "probe": { "type": "arithmetic", "max_sum": 20, "fluent_ms": 3000 }
+    },
+    {
+      "id": "op_add_2digit_no_regroup",
+      "strand": "operations",
+      "name": "Adds two-digit numbers without regrouping",
+      "grade_band": "2",
+      "ordinal": 90,
+      "prereq": ["pv_tens_ones", "op_add_within_20"],
+      "probe": { "type": "arithmetic", "op": "+", "digits": 2, "regroup": false }
+    },
+    {
+      "id": "op_add_2digit_regroup",
+      "strand": "operations",
+      "name": "Adds two-digit numbers with regrouping",
+      "grade_band": "2",
+      "ordinal": 100,
+      "prereq": ["op_add_2digit_no_regroup", "op_make_ten"],
+      "probe": { "type": "arithmetic", "op": "+", "digits": 2, "regroup": true }
+    },
+    {
+      "id": "op_sub_2digit_no_regroup",
+      "strand": "operations",
+      "name": "Subtracts two-digit numbers without regrouping",
+      "grade_band": "2",
+      "ordinal": 110,
+      "prereq": ["op_add_2digit_no_regroup", "op_sub_within_20"],
+      "probe": { "type": "arithmetic", "op": "-", "digits": 2, "regroup": false }
+    },
+    {
+      "id": "op_sub_2digit_regroup",
+      "strand": "operations",
+      "name": "Subtracts two-digit numbers with regrouping",
+      "description": "Where 'always take the smaller from the larger' shows up. Watch for it.",
+      "grade_band": "2",
+      "ordinal": 120,
+      "prereq": ["op_sub_2digit_no_regroup", "op_sub_within_20"],
+      "probe": { "type": "arithmetic", "op": "-", "digits": 2, "regroup": true }
+    },
+    {
+      "id": "op_word_problem_2step",
+      "strand": "operations",
+      "name": "Solves two-step word problems",
+      "grade_band": "2",
+      "ordinal": 130,
+      "prereq": ["op_word_problem_1step", "op_add_2digit_regroup"],
+      "probe": { "type": "word_problem", "steps": 2, "use_interests": true }
+    },
+    {
+      "id": "op_equal_groups",
+      "strand": "operations",
+      "name": "Works with equal groups and arrays",
+      "description": "Groundwork for multiplication without naming it.",
+      "grade_band": "2",
+      "ordinal": 140,
+      "prereq": ["cc_count_by_2s_5s", "op_add_within_20"],
+      "probe": { "type": "array", "prompt": "How many altogether in {rows} rows of {cols}?" }
+    },
+
+    {
+      "id": "md_compare_length",
+      "strand": "measurement",
+      "name": "Compares length directly",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "compare", "prompt": "Which one is longer?" }
+    },
+    {
+      "id": "md_nonstandard_units",
+      "strand": "measurement",
+      "name": "Measures with repeated units",
+      "description": "Cubes end to end, no gaps or overlaps.",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["md_compare_length", "cc_one_to_one"],
+      "probe": { "type": "measure", "unit": "cubes" }
+    },
+    {
+      "id": "md_time_hour",
+      "strand": "measurement",
+      "name": "Tells time to the hour",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["cc_count_to_20"],
+      "probe": { "type": "clock", "granularity": "hour" }
+    },
+    {
+      "id": "md_time_half_hour",
+      "strand": "measurement",
+      "name": "Tells time to the half hour",
+      "grade_band": "1",
+      "ordinal": 35,
+      "prereq": ["md_time_hour"],
+      "probe": { "type": "clock", "granularity": "half_hour" }
+    },
+    {
+      "id": "md_ruler_inches_cm",
+      "strand": "measurement",
+      "name": "Measures with a ruler",
+      "grade_band": "2",
+      "ordinal": 40,
+      "prereq": ["md_nonstandard_units"],
+      "probe": { "type": "measure", "unit": "ruler" }
+    },
+    {
+      "id": "md_time_five_min",
+      "strand": "measurement",
+      "name": "Tells time to five minutes",
+      "grade_band": "2",
+      "ordinal": 45,
+      "prereq": ["md_time_half_hour", "cc_count_by_2s_5s"],
+      "probe": { "type": "clock", "granularity": "five_min" }
+    },
+    {
+      "id": "md_money_coins",
+      "strand": "measurement",
+      "name": "Counts coins",
+      "grade_band": "2",
+      "ordinal": 50,
+      "prereq": ["cc_count_by_2s_5s", "pv_tens_ones"],
+      "probe": { "type": "money", "coins": ["penny", "nickel", "dime", "quarter"] }
+    },
+    {
+      "id": "md_picture_graph",
+      "strand": "measurement",
+      "name": "Reads a picture graph",
+      "grade_band": "1",
+      "ordinal": 60,
+      "prereq": ["cc_compare_sets"],
+      "probe": { "type": "graph", "form": "pictograph", "use_interests": true }
+    },
+    {
+      "id": "md_bar_graph",
+      "strand": "measurement",
+      "name": "Reads and makes a bar graph",
+      "grade_band": "2",
+      "ordinal": 70,
+      "prereq": ["md_picture_graph"],
+      "probe": { "type": "graph", "form": "bar", "use_interests": true }
+    },
+
+    {
+      "id": "ge_2d_shapes",
+      "strand": "geometry",
+      "name": "Names flat shapes",
+      "description": "Circle, square, triangle, rectangle, hexagon — in any orientation.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "name", "set": ["circle", "square", "triangle", "rectangle", "hexagon"], "rotate": true }
+    },
+    {
+      "id": "ge_3d_shapes",
+      "strand": "geometry",
+      "name": "Names solid shapes",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["ge_2d_shapes"],
+      "probe": { "type": "name", "set": ["cube", "sphere", "cone", "cylinder"] }
+    },
+    {
+      "id": "ge_shape_attributes",
+      "strand": "geometry",
+      "name": "Describes shapes by sides and corners",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["ge_2d_shapes", "cc_one_to_one"],
+      "probe": { "type": "describe", "prompt": "How many sides? How many corners?" }
+    },
+    {
+      "id": "ge_compose_shapes",
+      "strand": "geometry",
+      "name": "Builds shapes from other shapes",
+      "grade_band": "1",
+      "ordinal": 40,
+      "prereq": ["ge_shape_attributes"],
+      "probe": { "type": "build", "prompt": "Make a rectangle out of two triangles." }
+    },
+    {
+      "id": "ge_partition_halves_fourths",
+      "strand": "geometry",
+      "name": "Splits shapes into halves and fourths",
+      "grade_band": "1",
+      "ordinal": 50,
+      "prereq": ["ge_compose_shapes"],
+      "probe": { "type": "partition", "parts": [2, 4] }
+    },
+    {
+      "id": "ge_partition_thirds",
+      "strand": "geometry",
+      "name": "Splits shapes into thirds",
+      "description": "Watch for 'more pieces means bigger pieces'.",
+      "grade_band": "2",
+      "ordinal": 60,
+      "prereq": ["ge_partition_halves_fourths"],
+      "probe": { "type": "partition", "parts": [3] }
+    }
+  ]
+}

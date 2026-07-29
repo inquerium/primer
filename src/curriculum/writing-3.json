@@ -1,0 +1,158 @@
+{
+  "domain": "writing",
+  "version": "0.1",
+  "note": "Grade 3. Spelling becomes rule-governed rather than sound-by-sound, and writing becomes something you come back to and change. Revision is the year's real subject.",
+  "skills": [
+    {
+      "id": "en_multisyllabic",
+      "strand": "encoding",
+      "name": "Spells longer words syllable by syllable",
+      "grade_band": "3",
+      "ordinal": 90,
+      "prereq": ["en_vowel_teams", "ph_multisyllabic"],
+      "probe": { "type": "dictation", "words": ["fantastic", "remember", "important", "dinosaur"] }
+    },
+    {
+      "id": "en_prefixes_suffixes",
+      "strand": "encoding",
+      "name": "Spells words with prefixes and suffixes",
+      "grade_band": "3",
+      "ordinal": 100,
+      "prereq": ["en_suffixes", "ph_prefix_common"],
+      "probe": { "type": "dictation", "words": ["unhappy", "carefully", "disagree", "helpless"] }
+    },
+    {
+      "id": "en_drop_e_change_y",
+      "strand": "encoding",
+      "name": "Knows when to drop the e and change the y",
+      "description": "hope + ing = hoping. carry + ed = carried. Rules with clear edges, which makes them teachable.",
+      "grade_band": "3",
+      "ordinal": 110,
+      "prereq": ["en_doubling_rule"],
+      "probe": { "type": "dictation", "words": ["hoping", "carried", "making", "happiest"] }
+    },
+    {
+      "id": "en_homophones",
+      "strand": "encoding",
+      "name": "Spells the right homophone",
+      "grade_band": "3",
+      "ordinal": 120,
+      "prereq": ["ph_homophones"],
+      "probe": { "type": "dictation", "in_context": true, "sets": [["there", "their", "they're"], ["to", "too", "two"]] }
+    },
+    {
+      "id": "en_irregular_plurals",
+      "strand": "encoding",
+      "name": "Spells irregular plurals",
+      "grade_band": "3",
+      "ordinal": 125,
+      "prereq": ["ph_irregular_plurals"],
+      "probe": { "type": "dictation", "words": ["children", "leaves", "mice", "knives"] }
+    },
+
+    {
+      "id": "cv_verb_tenses",
+      "strand": "conventions",
+      "name": "Keeps verb tense consistent",
+      "description": "Drifting between past and present mid-story is the usual error.",
+      "grade_band": "3",
+      "ordinal": 70,
+      "prereq": ["cv_complete_sentence"],
+      "probe": { "type": "edit", "prompt": "Something changes halfway through. Find it." }
+    },
+    {
+      "id": "cv_subject_verb",
+      "strand": "conventions",
+      "name": "Matches the verb to the subject",
+      "grade_band": "3",
+      "ordinal": 75,
+      "prereq": ["cv_complete_sentence"],
+      "probe": { "type": "edit", "prompt": "The dogs runs fast. Fix it." }
+    },
+    {
+      "id": "cv_possessives",
+      "strand": "conventions",
+      "name": "Uses apostrophes for belonging",
+      "description": "The dog's bone versus the dogs. Overuse on plurals is near universal.",
+      "grade_band": "3",
+      "ordinal": 80,
+      "prereq": ["ph_contractions"],
+      "probe": { "type": "edit", "prompt": "Whose bone is it? Write it." }
+    },
+    {
+      "id": "cv_paragraphing",
+      "strand": "conventions",
+      "name": "Starts a new paragraph when the topic changes",
+      "grade_band": "3",
+      "ordinal": 90,
+      "prereq": ["cv_commas_series"],
+      "probe": { "type": "edit", "prompt": "Where should this break into paragraphs?" }
+    },
+
+    {
+      "id": "co_paragraph_support",
+      "strand": "composition",
+      "name": "Writes a paragraph where every sentence belongs",
+      "grade_band": "3",
+      "ordinal": 80,
+      "prereq": ["co_paragraph"],
+      "probe": { "type": "produce", "prompt": "Write a paragraph about {topic}. Every sentence should be about that one thing.", "use_interests": true }
+    },
+    {
+      "id": "co_multi_paragraph",
+      "strand": "composition",
+      "name": "Writes something with a beginning, middle, and end",
+      "grade_band": "3",
+      "ordinal": 90,
+      "prereq": ["co_paragraph_support", "cv_paragraphing"],
+      "probe": { "type": "produce", "prompt": "Write a story in three parts.", "use_interests": true }
+    },
+    {
+      "id": "co_opinion_essay",
+      "strand": "composition",
+      "name": "Argues an opinion with reasons in order",
+      "grade_band": "3",
+      "ordinal": 100,
+      "prereq": ["co_opinion_reason", "co_paragraph_support"],
+      "probe": { "type": "produce", "prompt": "What do you think, and what are your three best reasons?", "use_interests": true }
+    },
+    {
+      "id": "co_informative_report",
+      "strand": "composition",
+      "name": "Writes a short report on a topic",
+      "grade_band": "3",
+      "ordinal": 110,
+      "prereq": ["co_informative_facts", "co_paragraph_support"],
+      "probe": { "type": "produce", "prompt": "Teach me about {topic} in a few paragraphs.", "use_interests": true }
+    },
+    {
+      "id": "co_research_notes",
+      "strand": "composition",
+      "name": "Takes notes in their own words",
+      "description": "Not copying is the whole skill, and it has to be taught outright.",
+      "grade_band": "3",
+      "ordinal": 120,
+      "prereq": ["cm_summarize"],
+      "probe": { "type": "produce", "prompt": "Read this, then tell me the important bits without looking." }
+    },
+    {
+      "id": "co_revise_structure",
+      "strand": "composition",
+      "name": "Changes their writing after reading it back",
+      "description": "Moving, cutting, and rewriting rather than only adding. The hardest habit in this pack.",
+      "grade_band": "3",
+      "ordinal": 130,
+      "prereq": ["co_revise_add_detail", "co_multi_paragraph"],
+      "probe": { "type": "revise", "prompt": "Read it out loud. What would you move or take out?" }
+    },
+    {
+      "id": "co_edit_own_work",
+      "strand": "composition",
+      "name": "Finds their own mistakes",
+      "grade_band": "3",
+      "ordinal": 140,
+      "prereq": ["cv_verb_tenses", "cv_subject_verb", "co_revise_structure"],
+      "probe": { "type": "edit", "own_work": true, "prompt": "Check it before anyone else does." }
+    }
+  ]
+}

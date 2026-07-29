@@ -1,0 +1,262 @@
+{
+  "domain": "writing",
+  "version": "0.1",
+  "note": "Handwriting, encoding, conventions, composition. Encoding prerequisites point into the reading graph on purpose: you cannot spell what you cannot segment.",
+  "skills": [
+    {
+      "id": "hw_grip_strokes",
+      "strand": "handwriting",
+      "name": "Draws the basic strokes",
+      "description": "Vertical, horizontal, circle, diagonal, with a workable grip.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "trace", "strokes": ["|", "-", "O", "/", "\\"] }
+    },
+    {
+      "id": "hw_uppercase",
+      "strand": "handwriting",
+      "name": "Writes uppercase letters",
+      "description": "Uppercase first: all straight lines and big curves, easier motor control.",
+      "grade_band": "pk",
+      "ordinal": 20,
+      "prereq": ["hw_grip_strokes", "al_letter_names_upper"],
+      "probe": { "type": "write", "prompt": "Write a capital {letter}.", "set": "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }
+    },
+    {
+      "id": "hw_lowercase",
+      "strand": "handwriting",
+      "name": "Writes lowercase letters",
+      "grade_band": "k",
+      "ordinal": 30,
+      "prereq": ["hw_uppercase", "al_letter_names_lower"],
+      "probe": { "type": "write", "prompt": "Write a lowercase {letter}.", "set": "abcdefghijklmnopqrstuvwxyz" }
+    },
+    {
+      "id": "hw_numerals",
+      "strand": "handwriting",
+      "name": "Writes numerals 0-9",
+      "grade_band": "k",
+      "ordinal": 40,
+      "prereq": ["hw_grip_strokes"],
+      "probe": { "type": "write", "set": "0123456789" }
+    },
+    {
+      "id": "hw_letter_size_baseline",
+      "strand": "handwriting",
+      "name": "Sits letters on the line at the right size",
+      "description": "Tall, short, and below-the-line letters in proportion.",
+      "grade_band": "k",
+      "ordinal": 50,
+      "prereq": ["hw_lowercase"],
+      "probe": { "type": "write", "score": "baseline_and_size" }
+    },
+    {
+      "id": "hw_spacing_words",
+      "strand": "handwriting",
+      "name": "Leaves spaces between words",
+      "grade_band": "k",
+      "ordinal": 60,
+      "prereq": ["hw_letter_size_baseline"],
+      "probe": { "type": "write", "prompt": "Write: I see a cat.", "score": "word_spacing" }
+    },
+
+    {
+      "id": "en_hf_words",
+      "strand": "encoding",
+      "name": "Spells first high-frequency words",
+      "grade_band": "k",
+      "ordinal": 10,
+      "prereq": ["hf_set1", "hw_lowercase"],
+      "probe": { "type": "dictation", "words": ["the", "and", "see", "my", "go", "is", "to"] }
+    },
+    {
+      "id": "en_cvc_short_vowels",
+      "strand": "encoding",
+      "name": "Spells CVC words",
+      "description": "Segment, then write a letter per sound. Reading it first is not the same skill.",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["pa_phoneme_segment_3", "ph_cvc_mixed", "hw_lowercase"],
+      "probe": { "type": "dictation", "words": ["cat", "bed", "pig", "hop", "sun"] }
+    },
+    {
+      "id": "en_digraphs",
+      "strand": "encoding",
+      "name": "Spells words with sh, ch, th",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["en_cvc_short_vowels", "ph_digraphs"],
+      "probe": { "type": "dictation", "words": ["ship", "chin", "that", "wish", "much"] }
+    },
+    {
+      "id": "en_blends",
+      "strand": "encoding",
+      "name": "Spells words with blends",
+      "description": "The second letter of a blend is the one most often dropped.",
+      "grade_band": "1",
+      "ordinal": 40,
+      "prereq": ["en_cvc_short_vowels", "ph_blends_initial"],
+      "probe": { "type": "dictation", "words": ["stop", "flag", "hand", "jump", "grab"] }
+    },
+    {
+      "id": "en_magic_e",
+      "strand": "encoding",
+      "name": "Spells silent-e words",
+      "grade_band": "1",
+      "ordinal": 50,
+      "prereq": ["en_cvc_short_vowels", "ph_magic_e"],
+      "probe": { "type": "dictation", "words": ["cake", "bike", "hope", "cute", "name"] }
+    },
+    {
+      "id": "en_vowel_teams",
+      "strand": "encoding",
+      "name": "Spells vowel team words",
+      "description": "Which spelling of the same sound is a real decision. Expect ai/ay confusion.",
+      "grade_band": "2",
+      "ordinal": 60,
+      "prereq": ["en_magic_e", "ph_vowel_team_ai_ay"],
+      "probe": { "type": "dictation", "words": ["rain", "play", "feet", "boat", "team"] }
+    },
+    {
+      "id": "en_suffixes",
+      "strand": "encoding",
+      "name": "Spells -s, -ed, -ing endings",
+      "grade_band": "2",
+      "ordinal": 70,
+      "prereq": ["en_blends", "ph_suffix_s_ed_ing"],
+      "probe": { "type": "dictation", "words": ["jumps", "played", "going", "wanted"] }
+    },
+    {
+      "id": "en_doubling_rule",
+      "strand": "encoding",
+      "name": "Doubles the consonant before adding an ending",
+      "description": "hop becomes hopping, not hoping.",
+      "grade_band": "2",
+      "ordinal": 80,
+      "prereq": ["en_suffixes", "en_magic_e"],
+      "probe": { "type": "dictation", "words": ["hopping", "running", "sitting", "hoping"] }
+    },
+
+    {
+      "id": "cv_capital_start",
+      "strand": "conventions",
+      "name": "Starts a sentence with a capital",
+      "grade_band": "k",
+      "ordinal": 10,
+      "prereq": ["hw_uppercase"],
+      "probe": { "type": "edit", "prompt": "Fix what is wrong: 'the dog ran.'" }
+    },
+    {
+      "id": "cv_end_punctuation",
+      "strand": "conventions",
+      "name": "Ends a sentence with . ? or !",
+      "grade_band": "k",
+      "ordinal": 20,
+      "probe": { "type": "edit", "prompt": "What goes at the end?" }
+    },
+    {
+      "id": "cv_complete_sentence",
+      "strand": "conventions",
+      "name": "Writes a complete sentence",
+      "description": "Has a who and a what-they-did. Fragments are the norm at first.",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["cv_capital_start", "cv_end_punctuation"],
+      "probe": { "type": "judge", "prompt": "Is this a whole sentence or just part of one?" }
+    },
+    {
+      "id": "cv_proper_nouns",
+      "strand": "conventions",
+      "name": "Capitalizes names",
+      "grade_band": "1",
+      "ordinal": 40,
+      "prereq": ["cv_capital_start"],
+      "probe": { "type": "edit", "use_interests": true }
+    },
+    {
+      "id": "cv_commas_series",
+      "strand": "conventions",
+      "name": "Uses commas in a list",
+      "grade_band": "2",
+      "ordinal": 50,
+      "prereq": ["cv_complete_sentence"],
+      "probe": { "type": "edit", "prompt": "Add the commas: 'I like dogs cats and birds.'" }
+    },
+    {
+      "id": "cv_quotation_dialogue",
+      "strand": "conventions",
+      "name": "Punctuates dialogue",
+      "grade_band": "2",
+      "ordinal": 60,
+      "prereq": ["cv_commas_series"],
+      "probe": { "type": "edit", "prompt": "Add quotation marks where someone is talking." }
+    },
+
+    {
+      "id": "co_label_drawing",
+      "strand": "composition",
+      "name": "Labels a drawing",
+      "description": "First real writing. Invented spelling is a success, not an error.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "prereq": ["hw_uppercase"],
+      "probe": { "type": "produce", "prompt": "Draw it, then write what it is.", "use_interests": true }
+    },
+    {
+      "id": "co_single_sentence",
+      "strand": "composition",
+      "name": "Writes one sentence about something",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["co_label_drawing", "en_cvc_short_vowels", "cv_capital_start"],
+      "probe": { "type": "produce", "prompt": "Write one sentence about {topic}.", "use_interests": true }
+    },
+    {
+      "id": "co_narrative_sequence",
+      "strand": "composition",
+      "name": "Tells a story in order in writing",
+      "description": "Two or more events, first/then/last.",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["co_single_sentence", "cv_complete_sentence"],
+      "probe": { "type": "produce", "prompt": "Write about something that happened. What came first?", "use_interests": true }
+    },
+    {
+      "id": "co_opinion_reason",
+      "strand": "composition",
+      "name": "States an opinion and a reason",
+      "grade_band": "1",
+      "ordinal": 40,
+      "prereq": ["co_single_sentence"],
+      "probe": { "type": "produce", "prompt": "What is the best {category}? Why?", "use_interests": true }
+    },
+    {
+      "id": "co_informative_facts",
+      "strand": "composition",
+      "name": "Writes facts about a topic",
+      "grade_band": "1",
+      "ordinal": 50,
+      "prereq": ["co_single_sentence"],
+      "probe": { "type": "produce", "prompt": "Teach me three things about {topic}.", "use_interests": true }
+    },
+    {
+      "id": "co_revise_add_detail",
+      "strand": "composition",
+      "name": "Adds detail when asked",
+      "description": "Revision as a separate act from writing. Rare and worth building early.",
+      "grade_band": "2",
+      "ordinal": 60,
+      "prereq": ["co_narrative_sequence"],
+      "probe": { "type": "revise", "prompt": "Read it back. Where could you tell me more?" }
+    },
+    {
+      "id": "co_paragraph",
+      "strand": "composition",
+      "name": "Writes a paragraph with a topic sentence",
+      "grade_band": "2",
+      "ordinal": 70,
+      "prereq": ["co_narrative_sequence", "co_informative_facts"],
+      "probe": { "type": "produce", "prompt": "Write a paragraph about {topic}. Start with a sentence that says what it is about.", "use_interests": true }
+    }
+  ]
+}

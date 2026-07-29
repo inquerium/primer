@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bed or Bid</title>
+<!--
+  A reference interface, not a template.
+
+  This is what one tutor built for one child on one afternoon: Ada, six, who reads
+  every short e as short i, loves dinosaurs, and shuts down when she sees a timer.
+  Every choice below comes from her record:
+
+    misconception  "Reads short e as short i (bed -> bid, pen -> pin)"
+                   -> minimal pairs, both words visible, she picks rather than produces,
+                      so a wrong answer costs one tap instead of a whole word
+    strategy note  "Try mouth position - /e/ is open, /i/ is tight"
+                   -> the mouth hint is the first thing on the screen, before any word
+    accommodation  no_timers      -> nothing counts down, nothing expires
+    accommodation  typography     -> 34px+ text, wide line spacing, one line at a time
+    interest       dinosaurs      -> the words live in a dig site, not a worksheet
+    affect         frustration x2 -> eight items, not twenty, and it ends on the easy pair
+
+  For the next child this file should look nothing like this. That is the point.
+-->
+<style>
+  :root {
+    --ink: #241c15;
+    --paper: #f7f1e6;
+    --dig: #e2d3ba;
+    --bone: #fffdf8;
+    --yes: #2f7d4f;
+    --no: #b4531f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 4rem;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Verdana", "Segoe UI", system-ui, sans-serif;
+    font-size: 20px;
+    line-height: 1.9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  main { width: min(38rem, 100%); }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0 0 0.25rem;
+  }
+  .mouth {
+    background: var(--bone);
+    border: 2px solid var(--dig);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0 2rem;
+    font-size: 1.05rem;
+  }
+  .mouth b { font-size: 1.3rem; }
+  .prompt {
+    font-size: 1.15rem;
+    margin: 0 0 1.5rem;
+    min-height: 3.4rem;
+  }
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  button.word {
+    font-family: inherit;
+    font-size: 2.15rem;       /* large by requirement, not by decoration */
+    letter-spacing: 0.06em;
+    padding: 1.4rem 0.5rem;
+    background: var(--bone);
+    color: var(--ink);
+    border: 3px solid var(--dig);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 120ms ease, border-color 120ms ease;
+  }
+  button.word:hover:not(:disabled) { transform: translateY(-2px); border-color: #c9b291; }
+  button.word:focus-visible { outline: 4px solid #7b6a52; outline-offset: 3px; }
+  button.word.right { border-color: var(--yes); background: #eaf5ee; }
+  button.word.wrong { border-color: var(--no); background: #fbeee6; }
+  button.word:disabled { cursor: default; }
+  .after {
+    margin-top: 1.75rem;
+    font-size: 1.05rem;
+    min-height: 5rem;
+  }
+  .again {
+    font: inherit;
+    font-size: 1.05rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 12px;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .dots { display: flex; gap: 0.5rem; margin-top: 2.5rem; }
+  .dots span {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--dig);
+  }
+  .dots span.done { background: #8a7a60; }
+  .done-panel { font-size: 1.15rem; }
+  @media (prefers-reduced-motion: reduce) {
+    button.word { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>The dig site</h1>
+
+  <div class="mouth">
+    Say them first, and feel your mouth.<br>
+    <b>/e/</b> as in <b>bed</b> — your mouth is open, jaw drops.<br>
+    <b>/i/</b> as in <b>bid</b> — your mouth is tight, like a small smile.
+  </div>
+
+  <p class="prompt" id="prompt"></p>
+
+  <div class="pair">
+    <button class="word" id="left"></button>
+    <button class="word" id="right"></button>
+  </div>
+
+  <div class="after" id="after"></div>
+
+  <div class="dots" id="dots"></div>
+</main>
+
+<script>
+  // Ordered deliberately: opens on the pair she has already met, ends on the
+  // easiest one so the session finishes on a win rather than on a correction.
+  const ITEMS = [
+    { e: 'bed', i: 'bid', ask: 'e', clue: 'The baby dinosaur sleeps in her ___.' },
+    { e: 'pen', i: 'pin', ask: 'e', clue: 'You write the dinosaur names with a ___.' },
+    { e: 'ten', i: 'tin', ask: 'e', clue: 'She counted ___ bones.' },
+    { e: 'beg', i: 'big', ask: 'i', clue: 'A brachiosaurus is very, very ___.' },
+    { e: 'pet', i: 'pit', ask: 'e', clue: 'A tiny dinosaur would make a strange ___.' },
+    { e: 'set', i: 'sit', ask: 'i', clue: 'Tell the dinosaur to ___ down.' },
+    { e: 'led', i: 'lid', ask: 'i', clue: 'Put the ___ back on the fossil box.' },
+    { e: 'red', i: 'rid', ask: 'e', clue: 'The stegosaurus plates are ___.' },
+  ];
+
+  const SKILL = 'ph_cvc_short_e';
+  const prompt = document.getElementById('prompt');
+  const left = document.getElementById('left');
+  const right = document.getElementById('right');
+  const after = document.getElementById('after');
+  const dots = document.getElementById('dots');
+
+  let index = 0;
+  let wrongInARow = 0;
+  let confusions = 0;
+
+  ITEMS.forEach(() => {
+    const dot = document.createElement('span');
+    dots.appendChild(dot);
+  });
+
+  function render() {
+    if (index >= ITEMS.length) return finish();
+
+    const item = ITEMS[index];
+    const answer = item.ask === 'e' ? item.e : item.i;
+    const other = item.ask === 'e' ? item.i : item.e;
+    const flip = index % 2 === 0;
+
+    prompt.textContent = item.clue.replace('___.', '. . .');
+    left.textContent = flip ? answer : other;
+    right.textContent = flip ? other : answer;
+    after.textContent = '';
+
+    for (const button of [left, right]) {
+      button.disabled = false;
+      button.className = 'word';
+      button.onclick = () => choose(button, button.textContent, answer, other, item);
+    }
+
+    // Latency should measure her thinking, not how long the page sat open.
+    primer.mark();
+  }
+
+  function choose(button, picked, answer, other, item) {
+    const correct = picked === answer;
+    left.disabled = right.disabled = true;
+    button.classList.add(correct ? 'right' : 'wrong');
+
+    // The whole reason this interface exists: report what happened, in detail.
+    primer.observe({
+      skill: SKILL,
+      correct: correct ? 1 : 0,
+      item: item.clue,
+      response: picked,
+      expected: answer,
+      modality: 'selected',
+      meta: { pair: [item.e, item.i], asked_for: item.ask },
+    });
+
+    if (correct) {
+      wrongInARow = 0;
+      after.textContent = item.clue.replace('___', answer);
+    } else {
+      wrongInARow += 1;
+      // Picking the short-i twin when the short-e word was wanted is not a slip,
+      // it is the misconception showing up again. Say so, once, with evidence.
+      if (picked === item.i && item.ask === 'e') {
+        confusions += 1;
+        if (confusions === 2) {
+          primer.misconception('Reads short e as short i (bed -> bid, pen -> pin)', {
+            skill: SKILL,
+            example: 'Chose "' + item.i + '" when the sentence needed "' + item.e + '".',
+          });
+        }
+      }
+      after.innerHTML =
+        'That one says <b>' + picked + '</b>. Listen: <b>' + answer + '</b>. ' +
+        'Open your mouth for the middle sound.';
+      if (wrongInARow >= 3) {
+        primer.affect('frustration', {
+          intensity: 0.7,
+          evidence: 'Three wrong in a row on minimal pairs.',
+        });
+        return finish(true);
+      }
+    }
+
+    dots.children[index].classList.add('done');
+    index += 1;
+
+    const next = document.createElement('button');
+    next.className = 'again';
+    next.textContent = index >= ITEMS.length ? 'Finish' : 'Next one';
+    next.onclick = render;
+    after.appendChild(document.createElement('br'));
+    after.appendChild(next);
+    next.focus();
+  }
+
+  function finish(cutShort) {
+    prompt.textContent = '';
+    left.style.display = right.style.display = 'none';
+    after.className = 'after done-panel';
+    after.textContent = cutShort
+      ? 'Good stopping place. Those two sounds are close together and your mouth is still learning them.'
+      : 'You did the whole dig. Short e is the open-mouth one.';
+
+    primer.done({
+      summary: cutShort
+        ? 'Stopped early after three consecutive errors on e/i minimal pairs. The mouth-position ' +
+          'framing did not carry over into choosing. Try producing the sound before showing print next time.'
+        : 'Worked eight e/i minimal pairs in a dig-site frame. ' + confusions + ' e-to-i substitutions. ' +
+          'Choosing between two visible words is easier for her than reading one aloud, which is worth keeping.',
+      energy: cutShort ? 'low' : 'ok',
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>

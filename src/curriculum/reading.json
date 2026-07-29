@@ -1,0 +1,632 @@
+{
+  "domain": "reading",
+  "version": "0.1",
+  "note": "K-2 scope and sequence. Skills are atoms of knowing, not lessons. `probe` tells a tutor how to generate a fresh item; there is no fixed item bank on purpose.",
+  "skills": [
+    {
+      "id": "pc_book_orientation",
+      "strand": "print_concepts",
+      "name": "Holds a book the right way",
+      "description": "Front cover, right way up, turns pages one at a time front to back.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "observe", "prompt": "Hand them a book upside down and backwards. Ask them to start reading." }
+    },
+    {
+      "id": "pc_directionality",
+      "strand": "print_concepts",
+      "name": "Reads left to right, top to bottom",
+      "description": "Tracks print in the correct direction with return sweep.",
+      "grade_band": "pk",
+      "ordinal": 20,
+      "prereq": ["pc_book_orientation"],
+      "probe": { "type": "observe", "prompt": "Ask them to point to the words while you read a two-line page." }
+    },
+    {
+      "id": "pc_word_boundaries",
+      "strand": "print_concepts",
+      "name": "Knows where one word ends and the next begins",
+      "description": "Points to individual words in a spoken sentence matched to print.",
+      "grade_band": "pk",
+      "ordinal": 30,
+      "prereq": ["pc_directionality"],
+      "probe": { "type": "point", "prompt": "Point to each word as we say the sentence together.", "items": ["The dog ran fast."] }
+    },
+    {
+      "id": "pc_letter_vs_word",
+      "strand": "print_concepts",
+      "name": "Distinguishes a letter from a word",
+      "description": "Can show 'one letter' vs 'one word' on a page.",
+      "grade_band": "pk",
+      "ordinal": 40,
+      "prereq": ["pc_word_boundaries"],
+      "probe": { "type": "point", "prompt": "Show me just one letter. Now show me one whole word." }
+    },
+
+    {
+      "id": "pa_rhyme_recognize",
+      "strand": "phonological_awareness",
+      "name": "Hears rhyme",
+      "description": "Decides whether two spoken words rhyme.",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": {
+        "type": "yes_no",
+        "prompt": "Do these rhyme?",
+        "pairs": [["cat", "hat"], ["sun", "run"], ["dog", "cup"], ["bee", "tree"], ["book", "mop"]],
+        "modality": "spoken"
+      }
+    },
+    {
+      "id": "pa_rhyme_produce",
+      "strand": "phonological_awareness",
+      "name": "Makes a rhyme",
+      "description": "Produces a word that rhymes with a given word. Nonsense words count.",
+      "grade_band": "pk",
+      "ordinal": 20,
+      "prereq": ["pa_rhyme_recognize"],
+      "probe": { "type": "produce", "prompt": "Tell me a word that rhymes with {word}.", "words": ["cat", "star", "bug", "night", "ring"] }
+    },
+    {
+      "id": "pa_syllable_count",
+      "strand": "phonological_awareness",
+      "name": "Counts syllables",
+      "description": "Claps or counts syllables in spoken words of 1-4 syllables.",
+      "grade_band": "pk",
+      "ordinal": 30,
+      "probe": { "type": "count", "prompt": "Clap the parts in {word}.", "words": ["dog", "penguin", "butterfly", "elephant", "cup", "rainbow"] }
+    },
+    {
+      "id": "pa_alliteration",
+      "strand": "phonological_awareness",
+      "name": "Hears the same first sound",
+      "description": "Identifies which words start with the same sound.",
+      "grade_band": "pk",
+      "ordinal": 35,
+      "probe": { "type": "odd_one_out", "prompt": "Which one does not start like the others?", "sets": [["sun", "sock", "moon"], ["bat", "ball", "dog"]] }
+    },
+    {
+      "id": "pa_onset_rime_blend",
+      "strand": "phonological_awareness",
+      "name": "Blends onset and rime",
+      "description": "Hears /c/ + /at/ and says 'cat'. A rime is a rhyme — hearing rhyme comes first.",
+      "grade_band": "pk",
+      "ordinal": 40,
+      "prereq": ["pa_syllable_count", "pa_rhyme_recognize"],
+      "probe": { "type": "blend", "prompt": "Put it together: {onset} ... {rime}", "items": [["c", "at"], ["m", "op"], ["s", "un"], ["b", "ig"]] }
+    },
+    {
+      "id": "pa_phoneme_isolate_initial",
+      "strand": "phonological_awareness",
+      "name": "Hears the first sound in a word",
+      "description": "Says the beginning phoneme of a spoken word.",
+      "grade_band": "k",
+      "ordinal": 50,
+      "prereq": ["pa_onset_rime_blend", "pa_alliteration"],
+      "probe": { "type": "isolate", "position": "initial", "prompt": "What sound does {word} start with?", "words": ["map", "sit", "fun", "top", "leg"] }
+    },
+    {
+      "id": "pa_phoneme_isolate_final",
+      "strand": "phonological_awareness",
+      "name": "Hears the last sound in a word",
+      "grade_band": "k",
+      "ordinal": 60,
+      "prereq": ["pa_phoneme_isolate_initial"],
+      "probe": { "type": "isolate", "position": "final", "prompt": "What sound does {word} end with?", "words": ["cat", "bus", "red", "him", "leg"] }
+    },
+    {
+      "id": "pa_phoneme_isolate_medial",
+      "strand": "phonological_awareness",
+      "name": "Hears the vowel in the middle",
+      "description": "Hardest of the three positions. Expect this to lag.",
+      "grade_band": "k",
+      "ordinal": 70,
+      "prereq": ["pa_phoneme_isolate_final"],
+      "probe": { "type": "isolate", "position": "medial", "prompt": "What sound is in the middle of {word}?", "words": ["cat", "hop", "bed", "sun", "pig"] }
+    },
+    {
+      "id": "pa_phoneme_blend_3",
+      "strand": "phonological_awareness",
+      "name": "Blends three sounds into a word",
+      "description": "/s/ /u/ /n/ becomes 'sun'. The single best predictor of early decoding.",
+      "grade_band": "k",
+      "ordinal": 80,
+      "prereq": ["pa_phoneme_isolate_initial"],
+      "probe": { "type": "blend", "prompt": "What word is this? {sounds}", "words": ["sun", "map", "hit", "bed", "log"] }
+    },
+    {
+      "id": "pa_phoneme_segment_3",
+      "strand": "phonological_awareness",
+      "name": "Breaks a word into its sounds",
+      "description": "Says 'cat' as /c/ /a/ /t/. The gateway to spelling.",
+      "grade_band": "k",
+      "ordinal": 90,
+      "prereq": ["pa_phoneme_blend_3"],
+      "probe": { "type": "segment", "prompt": "Say the sounds in {word}, one at a time.", "words": ["cat", "fish", "stop", "hand"] }
+    },
+    {
+      "id": "pa_phoneme_delete",
+      "strand": "phonological_awareness",
+      "name": "Takes a sound away",
+      "description": "'Say cart without the /c/.'",
+      "grade_band": "1",
+      "ordinal": 100,
+      "prereq": ["pa_phoneme_segment_3"],
+      "probe": { "type": "manipulate", "op": "delete", "prompt": "Say {word} without the /{sound}/.", "items": [["cart", "c"], ["stop", "s"], ["bend", "b"]] }
+    },
+    {
+      "id": "pa_phoneme_substitute",
+      "strand": "phonological_awareness",
+      "name": "Swaps a sound",
+      "description": "'Change the /a/ in cat to /o/.'",
+      "grade_band": "1",
+      "ordinal": 110,
+      "prereq": ["pa_phoneme_delete"],
+      "probe": { "type": "manipulate", "op": "substitute", "prompt": "Change the /{from}/ in {word} to /{to}/.", "items": [["cat", "a", "o"], ["ship", "i", "o"], ["run", "r", "s"]] }
+    },
+
+    {
+      "id": "al_letter_names_upper",
+      "strand": "alphabet",
+      "name": "Names uppercase letters",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "name", "prompt": "What letter is this?", "set": "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "sample": 8 }
+    },
+    {
+      "id": "al_letter_names_lower",
+      "strand": "alphabet",
+      "name": "Names lowercase letters",
+      "description": "b/d/p/q confusion here is normal and worth tracking as a misconception, not a failure.",
+      "grade_band": "pk",
+      "ordinal": 20,
+      "prereq": ["al_letter_names_upper"],
+      "probe": { "type": "name", "prompt": "What letter is this?", "set": "abcdefghijklmnopqrstuvwxyz", "sample": 8 }
+    },
+    {
+      "id": "al_letter_sounds_consonants",
+      "strand": "alphabet",
+      "name": "Says consonant sounds",
+      "description": "Sound, not letter name. Clipped: /t/ not 'tuh'.",
+      "grade_band": "k",
+      "ordinal": 30,
+      "prereq": ["al_letter_names_lower"],
+      "probe": { "type": "sound", "prompt": "What sound does {letter} make?", "set": "bcdfghjklmnpqrstvwxyz", "sample": 8 }
+    },
+    {
+      "id": "al_letter_sounds_short_vowels",
+      "strand": "alphabet",
+      "name": "Says short vowel sounds",
+      "grade_band": "k",
+      "ordinal": 40,
+      "prereq": ["al_letter_names_lower"],
+      "probe": { "type": "sound", "prompt": "What sound does {letter} make?", "set": "aeiou" }
+    },
+
+    {
+      "id": "ph_cvc_short_a",
+      "strand": "phonics",
+      "name": "Reads CVC words with short a",
+      "grade_band": "k",
+      "ordinal": 10,
+      "prereq": ["al_letter_sounds_consonants", "al_letter_sounds_short_vowels", "pa_phoneme_blend_3"],
+      "probe": { "type": "decode", "pattern": "C a C", "examples": ["cat", "map", "sad", "bag", "ran"], "prompt": "Read this word." }
+    },
+    {
+      "id": "ph_cvc_short_i",
+      "strand": "phonics",
+      "name": "Reads CVC words with short i",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["ph_cvc_short_a"],
+      "probe": { "type": "decode", "pattern": "C i C", "examples": ["sit", "pig", "him", "lid", "win"] }
+    },
+    {
+      "id": "ph_cvc_short_o",
+      "strand": "phonics",
+      "name": "Reads CVC words with short o",
+      "grade_band": "k",
+      "ordinal": 30,
+      "prereq": ["ph_cvc_short_i"],
+      "probe": { "type": "decode", "pattern": "C o C", "examples": ["hop", "dog", "not", "mom", "log"] }
+    },
+    {
+      "id": "ph_cvc_short_u",
+      "strand": "phonics",
+      "name": "Reads CVC words with short u",
+      "grade_band": "k",
+      "ordinal": 40,
+      "prereq": ["ph_cvc_short_o"],
+      "probe": { "type": "decode", "pattern": "C u C", "examples": ["sun", "bug", "cup", "run", "mud"] }
+    },
+    {
+      "id": "ph_cvc_short_e",
+      "strand": "phonics",
+      "name": "Reads CVC words with short e",
+      "description": "Taught last: /e/ and /i/ are the easiest pair to confuse.",
+      "grade_band": "k",
+      "ordinal": 50,
+      "prereq": ["ph_cvc_short_u", "pa_phoneme_isolate_medial"],
+      "probe": { "type": "decode", "pattern": "C e C", "examples": ["bed", "hen", "wet", "leg", "ten"] }
+    },
+    {
+      "id": "ph_cvc_mixed",
+      "strand": "phonics",
+      "name": "Reads CVC words with any short vowel",
+      "description": "Mixed vowels in one list. This is where vowel confusion shows up.",
+      "grade_band": "k",
+      "ordinal": 60,
+      "prereq": ["ph_cvc_short_e"],
+      "probe": { "type": "decode", "pattern": "CVC mixed", "examples": ["hat", "bet", "fit", "hot", "cub", "pen", "map", "dig"] }
+    },
+    {
+      "id": "ph_ck_ff_ll_ss",
+      "strand": "phonics",
+      "name": "Reads words ending -ck, -ff, -ll, -ss",
+      "description": "The floss rule. Two letters, one sound.",
+      "grade_band": "1",
+      "ordinal": 65,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode", "examples": ["duck", "puff", "hill", "miss", "back", "bell"] }
+    },
+    {
+      "id": "ph_digraphs",
+      "strand": "phonics",
+      "name": "Reads sh, ch, th, wh",
+      "description": "Two letters making one new sound, not a blend.",
+      "grade_band": "1",
+      "ordinal": 70,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode", "examples": ["ship", "chin", "that", "when", "shop", "much"] }
+    },
+    {
+      "id": "ph_blends_initial",
+      "strand": "phonics",
+      "name": "Reads initial blends",
+      "description": "st, bl, tr, cl, gr — both sounds are still heard.",
+      "grade_band": "1",
+      "ordinal": 80,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode", "examples": ["stop", "blue", "trip", "clap", "grab", "flat"] }
+    },
+    {
+      "id": "ph_blends_final",
+      "strand": "phonics",
+      "name": "Reads final blends",
+      "grade_band": "1",
+      "ordinal": 90,
+      "prereq": ["ph_blends_initial"],
+      "probe": { "type": "decode", "examples": ["hand", "jump", "fast", "milk", "went", "lamp"] }
+    },
+    {
+      "id": "ph_magic_e",
+      "strand": "phonics",
+      "name": "Reads silent-e words",
+      "description": "cap/cape. The e is silent and makes the vowel say its name.",
+      "grade_band": "1",
+      "ordinal": 100,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode_contrast", "pairs": [["cap", "cape"], ["kit", "kite"], ["hop", "hope"], ["cub", "cube"], ["pin", "pine"]] }
+    },
+    {
+      "id": "ph_suffix_s_ed_ing",
+      "strand": "phonics",
+      "name": "Reads -s, -ed, -ing endings",
+      "description": "-ed has three sounds: /t/, /d/, /ed/. Expect confusion.",
+      "grade_band": "1",
+      "ordinal": 105,
+      "prereq": ["ph_cvc_mixed", "ph_blends_final"],
+      "probe": { "type": "decode", "examples": ["jumps", "jumped", "jumping", "wanted", "played", "hopping"] }
+    },
+    {
+      "id": "ph_vowel_team_ai_ay",
+      "strand": "phonics",
+      "name": "Reads ai / ay",
+      "grade_band": "1",
+      "ordinal": 110,
+      "prereq": ["ph_magic_e"],
+      "probe": { "type": "decode", "examples": ["rain", "play", "wait", "day", "train", "say"] }
+    },
+    {
+      "id": "ph_vowel_team_ee_ea",
+      "strand": "phonics",
+      "name": "Reads ee / ea",
+      "grade_band": "1",
+      "ordinal": 120,
+      "prereq": ["ph_magic_e"],
+      "probe": { "type": "decode", "examples": ["feet", "read", "green", "beach", "sleep", "team"] }
+    },
+    {
+      "id": "ph_vowel_team_oa_ow",
+      "strand": "phonics",
+      "name": "Reads oa / ow (long o)",
+      "grade_band": "1",
+      "ordinal": 130,
+      "prereq": ["ph_vowel_team_ee_ea"],
+      "probe": { "type": "decode", "examples": ["boat", "snow", "road", "grow", "coat", "slow"] }
+    },
+    {
+      "id": "ph_vowel_team_igh_ie",
+      "strand": "phonics",
+      "name": "Reads igh / ie (long i)",
+      "grade_band": "2",
+      "ordinal": 140,
+      "prereq": ["ph_vowel_team_oa_ow"],
+      "probe": { "type": "decode", "examples": ["night", "pie", "light", "tie", "right", "flies"] }
+    },
+    {
+      "id": "ph_r_controlled_ar_or",
+      "strand": "phonics",
+      "name": "Reads ar / or",
+      "description": "Bossy r. The vowel no longer says short or long.",
+      "grade_band": "1",
+      "ordinal": 150,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode", "examples": ["car", "for", "star", "corn", "hard", "born"] }
+    },
+    {
+      "id": "ph_r_controlled_er_ir_ur",
+      "strand": "phonics",
+      "name": "Reads er / ir / ur",
+      "description": "Three spellings, one sound. Pure memory work for spelling.",
+      "grade_band": "2",
+      "ordinal": 160,
+      "prereq": ["ph_r_controlled_ar_or"],
+      "probe": { "type": "decode", "examples": ["her", "bird", "turn", "girl", "hurt", "fern"] }
+    },
+    {
+      "id": "ph_diphthongs",
+      "strand": "phonics",
+      "name": "Reads oi/oy and ou/ow",
+      "grade_band": "2",
+      "ordinal": 170,
+      "prereq": ["ph_vowel_team_oa_ow"],
+      "probe": { "type": "decode", "examples": ["coin", "boy", "out", "cow", "join", "found"] }
+    },
+    {
+      "id": "ph_soft_c_g",
+      "strand": "phonics",
+      "name": "Reads soft c and g",
+      "description": "c and g soften before e, i, y.",
+      "grade_band": "2",
+      "ordinal": 175,
+      "prereq": ["ph_cvc_mixed"],
+      "probe": { "type": "decode", "examples": ["city", "gem", "race", "giant", "nice", "cage"] }
+    },
+    {
+      "id": "ph_syllable_types",
+      "strand": "phonics",
+      "name": "Spots syllable types",
+      "description": "Closed, open, silent-e, vowel team, r-controlled, consonant-le.",
+      "grade_band": "2",
+      "ordinal": 180,
+      "prereq": ["ph_magic_e", "ph_r_controlled_ar_or", "ph_vowel_team_ee_ea"],
+      "probe": { "type": "classify", "prompt": "What kind of syllable is this?", "examples": ["nap", "go", "cake", "rain", "car", "table"] }
+    },
+    {
+      "id": "ph_two_syllable_decode",
+      "strand": "phonics",
+      "name": "Reads two-syllable words",
+      "description": "Splits and blends: rab-bit, mag-net, ti-ger.",
+      "grade_band": "2",
+      "ordinal": 190,
+      "prereq": ["ph_syllable_types"],
+      "probe": { "type": "decode", "examples": ["rabbit", "magnet", "tiger", "napkin", "muffin", "robot"] }
+    },
+    {
+      "id": "ph_prefix_un_re",
+      "strand": "phonics",
+      "name": "Reads un- and re- words",
+      "grade_band": "2",
+      "ordinal": 200,
+      "prereq": ["ph_two_syllable_decode"],
+      "probe": { "type": "decode", "examples": ["undo", "redo", "unhappy", "refill", "unlock", "retell"] }
+    },
+    {
+      "id": "ph_contractions",
+      "strand": "phonics",
+      "name": "Reads common contractions",
+      "grade_band": "2",
+      "ordinal": 210,
+      "prereq": ["ph_two_syllable_decode"],
+      "probe": { "type": "decode", "examples": ["can't", "don't", "it's", "I'm", "we'll", "didn't"] }
+    },
+
+    {
+      "id": "hf_set1",
+      "strand": "high_frequency",
+      "name": "Reads first high-frequency words",
+      "description": "the, a, I, to, and, see, my, go, is",
+      "grade_band": "k",
+      "ordinal": 10,
+      "probe": { "type": "sight", "words": ["the", "a", "I", "to", "and", "see", "my", "go", "is"] }
+    },
+    {
+      "id": "hf_set2",
+      "strand": "high_frequency",
+      "name": "Reads second set of high-frequency words",
+      "description": "like, we, you, are, he, she, was, for, on",
+      "grade_band": "k",
+      "ordinal": 20,
+      "prereq": ["hf_set1"],
+      "probe": { "type": "sight", "words": ["like", "we", "you", "are", "he", "she", "was", "for", "on"] }
+    },
+    {
+      "id": "hf_set3",
+      "strand": "high_frequency",
+      "name": "Reads third set of high-frequency words",
+      "description": "said, have, they, of, from, one, what, there, were",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["hf_set2"],
+      "probe": { "type": "sight", "words": ["said", "have", "they", "of", "from", "one", "what", "there", "were"] }
+    },
+    {
+      "id": "hf_set4",
+      "strand": "high_frequency",
+      "name": "Reads harder high-frequency words",
+      "description": "because, through, could, would, should, people, again, thought",
+      "grade_band": "2",
+      "ordinal": 40,
+      "prereq": ["hf_set3"],
+      "probe": { "type": "sight", "words": ["because", "through", "could", "would", "should", "people", "again", "thought"] }
+    },
+
+    {
+      "id": "fl_decodable_sentence",
+      "strand": "fluency",
+      "name": "Reads a decodable sentence",
+      "grade_band": "1",
+      "ordinal": 10,
+      "prereq": ["ph_cvc_mixed", "hf_set2"],
+      "probe": { "type": "read_aloud", "examples": ["The cat is on my bed.", "We can see a big red bug."] }
+    },
+    {
+      "id": "fl_rate_grade1",
+      "strand": "fluency",
+      "name": "Reads grade-1 text at a comfortable rate",
+      "description": "Roughly 50-60 correct words per minute by end of grade 1. Rate is a symptom, never the goal.",
+      "grade_band": "1",
+      "ordinal": 20,
+      "prereq": ["fl_decodable_sentence"],
+      "probe": { "type": "timed_read", "target_wcpm": 55 }
+    },
+    {
+      "id": "fl_phrasing",
+      "strand": "fluency",
+      "name": "Reads in phrases, not word by word",
+      "grade_band": "1",
+      "ordinal": 30,
+      "prereq": ["fl_decodable_sentence"],
+      "probe": { "type": "read_aloud", "score": "phrasing" }
+    },
+    {
+      "id": "fl_expression",
+      "strand": "fluency",
+      "name": "Reads with expression",
+      "description": "Honors punctuation, changes voice for dialogue.",
+      "grade_band": "2",
+      "ordinal": 40,
+      "prereq": ["fl_phrasing"],
+      "probe": { "type": "read_aloud", "score": "prosody" }
+    },
+    {
+      "id": "fl_rate_grade2",
+      "strand": "fluency",
+      "name": "Reads grade-2 text at a comfortable rate",
+      "description": "Roughly 90-100 correct words per minute by end of grade 2.",
+      "grade_band": "2",
+      "ordinal": 50,
+      "prereq": ["fl_rate_grade1"],
+      "probe": { "type": "timed_read", "target_wcpm": 95 }
+    },
+
+    {
+      "id": "cm_predict",
+      "strand": "comprehension",
+      "name": "Predicts what happens next",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "discuss", "prompt": "What do you think happens next? What makes you think that?" }
+    },
+    {
+      "id": "cm_character_setting",
+      "strand": "comprehension",
+      "name": "Names who the story is about and where it happens",
+      "grade_band": "k",
+      "ordinal": 20,
+      "probe": { "type": "discuss", "prompt": "Who is this story about? Where are they?" }
+    },
+    {
+      "id": "cm_retell_sequence",
+      "strand": "comprehension",
+      "name": "Retells a story in order",
+      "grade_band": "k",
+      "ordinal": 30,
+      "prereq": ["cm_character_setting"],
+      "probe": { "type": "retell", "prompt": "Tell me what happened, from the beginning." }
+    },
+    {
+      "id": "cm_question_answer",
+      "strand": "comprehension",
+      "name": "Answers who/what/where/when questions about a text",
+      "grade_band": "1",
+      "ordinal": 40,
+      "prereq": ["cm_retell_sequence"],
+      "probe": { "type": "qa", "question_types": ["who", "what", "where", "when"] }
+    },
+    {
+      "id": "cm_main_idea",
+      "strand": "comprehension",
+      "name": "Says what a text is mostly about",
+      "grade_band": "1",
+      "ordinal": 50,
+      "prereq": ["cm_retell_sequence"],
+      "probe": { "type": "discuss", "prompt": "What was this mostly about? Say it in one sentence." }
+    },
+    {
+      "id": "cm_nonfiction_features",
+      "strand": "comprehension",
+      "name": "Uses headings, captions, and diagrams",
+      "grade_band": "2",
+      "ordinal": 60,
+      "prereq": ["cm_main_idea"],
+      "probe": { "type": "locate", "prompt": "Where would you look to find out what this picture shows?" }
+    },
+    {
+      "id": "cm_inference",
+      "strand": "comprehension",
+      "name": "Figures out what the text does not say outright",
+      "description": "The jump from 'what does it say' to 'what does it mean'.",
+      "grade_band": "2",
+      "ordinal": 70,
+      "prereq": ["cm_main_idea"],
+      "probe": { "type": "qa", "question_types": ["why", "how do you know"] }
+    },
+    {
+      "id": "cm_compare_texts",
+      "strand": "comprehension",
+      "name": "Compares two texts on the same topic",
+      "grade_band": "2",
+      "ordinal": 80,
+      "prereq": ["cm_inference"],
+      "probe": { "type": "discuss", "prompt": "How were these two books the same? How were they different?" }
+    },
+
+    {
+      "id": "vo_categories",
+      "strand": "vocabulary",
+      "name": "Sorts words into categories",
+      "grade_band": "pk",
+      "ordinal": 10,
+      "probe": { "type": "sort", "prompt": "Which of these are animals?", "sets": [["dog", "cat", "chair", "bird"]] }
+    },
+    {
+      "id": "vo_antonyms_synonyms",
+      "strand": "vocabulary",
+      "name": "Gives opposites and words that mean the same",
+      "grade_band": "1",
+      "ordinal": 20,
+      "prereq": ["vo_categories"],
+      "probe": { "type": "produce", "prompt": "What is the opposite of {word}?", "words": ["big", "hot", "up", "happy"] }
+    },
+    {
+      "id": "vo_multiple_meaning",
+      "strand": "vocabulary",
+      "name": "Handles words with more than one meaning",
+      "grade_band": "2",
+      "ordinal": 30,
+      "prereq": ["vo_antonyms_synonyms"],
+      "probe": { "type": "discuss", "prompt": "A bat can be two things. What are they?", "words": ["bat", "bark", "light", "trunk"] }
+    },
+    {
+      "id": "vo_context_clues",
+      "strand": "vocabulary",
+      "name": "Works out a new word from the sentence around it",
+      "grade_band": "2",
+      "ordinal": 40,
+      "prereq": ["cm_main_idea", "vo_antonyms_synonyms"],
+      "probe": { "type": "discuss", "prompt": "What do you think {word} means here? What in the sentence tells you?" }
+    }
+  ]
+}

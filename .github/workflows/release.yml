@@ -1,0 +1,126 @@
+name: release
+
+# Cut binaries for every platform on a version tag.
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# Each runner builds its own binary, because a single executable is the host
+# `node` with a blob injected into it — there is no cross-compiling.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: primer-linux-x64
+          - os: ubuntu-24.04-arm
+            asset: primer-linux-arm64
+          - os: macos-13
+            asset: primer-macos-x64
+          - os: macos-latest
+            asset: primer-macos-arm64
+          - os: windows-latest
+            asset: primer-windows-x64.exe
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+
+      # Never ship a binary that fails its own tests.
+      - run: npm test
+
+      - run: node scripts/package.mjs --binary
+
+      # Prove the thing that was just built actually runs, on this platform, with
+      # no repository on disk to fall back to. This is the check that would have
+      # caught the bundle crashing on `import.meta.url`.
+      - name: Smoke test the binary
+        shell: bash
+        env:
+          PRIMER_HOME: ${{ runner.temp }}/primer-smoke
+        run: |
+          set -eu
+          name=primer
+          [ "${{ runner.os }}" = "Windows" ] && name=primer.exe
+          # Copy the binary out and run it from an empty directory, so nothing of the
+          # repository — no schema.sql, no curriculum, no node_modules — is reachable.
+          # $GITHUB_WORKSPACE is a backslash path on Windows and cannot be exec'd from
+          # bash after a cd, so the copy is also what makes this portable.
+          work=$(mktemp -d)
+          cp "build/$name" "$work/$name"
+          cd "$work"
+          "./$name" init
+          "./$name" learner:add "Smoke Test" --grade 2
+          "./$name" where
+          n=$("./$name" where | grep -o '"n": [0-9]*' | grep -o '[0-9]*')
+          [ "$n" -gt 100 ] || { echo "curriculum did not load: $n skills"; exit 1; }
+          echo "ok: $n skills from the embedded curriculum"
+
+      - name: Name and checksum
+        shell: bash
+        run: |
+          set -eu
+          src="build/primer"
+          [ "${{ runner.os }}" = "Windows" ] && src="build/primer.exe"
+          mkdir -p out
+          cp "$src" "out/${{ matrix.asset }}"
+          cd out
+          if command -v sha256sum >/dev/null; then
+            sha256sum "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+          else
+            shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
+          fi
+          cat "${{ matrix.asset }}.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: out/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: ls -la dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            **macOS / Linux**
+            ```
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | sh
+            ```
+
+            **Windows**
+            ```
+            irm https://raw.githubusercontent.com/${{ github.repository }}/main/install.ps1 | iex
+            ```
+
+            One file in `~/.local/bin`. No Node, no npm, no build step. Then:
+
+            ```
+            primer start
+            ```
+
+            Every binary below has a `.sha256` beside it, and the installers check it.

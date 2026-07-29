@@ -1,0 +1,204 @@
+{
+  "domain": "reading",
+  "version": "0.1",
+  "note": "Grade 3. The year decoding stops being the bottleneck and comprehension becomes the work. Morphology carries most of the vocabulary growth from here on.",
+  "skills": [
+    {
+      "id": "ph_multisyllabic",
+      "strand": "phonics",
+      "name": "Reads longer words by chunking them",
+      "description": "Three syllables and up: fan-tas-tic, im-por-tant. Splitting is the skill, not sounding out.",
+      "grade_band": "3",
+      "ordinal": 220,
+      "prereq": ["ph_two_syllable_decode"],
+      "probe": { "type": "decode", "examples": ["fantastic", "important", "elephant", "dinosaur", "computer", "wonderful"] }
+    },
+    {
+      "id": "ph_prefix_common",
+      "strand": "phonics",
+      "name": "Reads common prefixes",
+      "description": "dis-, mis-, pre-, non-, over-.",
+      "grade_band": "3",
+      "ordinal": 230,
+      "prereq": ["ph_prefix_un_re"],
+      "probe": { "type": "decode", "examples": ["disagree", "mistake", "preview", "nonstop", "overflow"] }
+    },
+    {
+      "id": "ph_suffix_common",
+      "strand": "phonics",
+      "name": "Reads common suffixes",
+      "description": "-ly, -ful, -less, -ness, -able.",
+      "grade_band": "3",
+      "ordinal": 235,
+      "prereq": ["ph_suffix_s_ed_ing"],
+      "probe": { "type": "decode", "examples": ["quickly", "helpful", "careless", "darkness", "comfortable"] }
+    },
+    {
+      "id": "ph_root_words",
+      "strand": "phonics",
+      "name": "Finds the root inside a longer word",
+      "description": "Seeing 'help' in 'unhelpfully' turns one known word into a family.",
+      "grade_band": "3",
+      "ordinal": 240,
+      "prereq": ["ph_prefix_common", "ph_suffix_common"],
+      "probe": { "type": "decompose", "prompt": "What is the root word in {word}?", "examples": ["unhelpfully", "replacement", "disagreement"] }
+    },
+    {
+      "id": "ph_irregular_plurals",
+      "strand": "phonics",
+      "name": "Reads irregular plurals",
+      "grade_band": "3",
+      "ordinal": 245,
+      "prereq": ["ph_suffix_s_ed_ing"],
+      "probe": { "type": "decode", "examples": ["children", "mice", "geese", "leaves", "knives", "feet"] }
+    },
+    {
+      "id": "ph_homophones",
+      "strand": "phonics",
+      "name": "Tells homophones apart in context",
+      "description": "there/their/they're. Only the sentence can decide.",
+      "grade_band": "3",
+      "ordinal": 250,
+      "prereq": ["ph_multisyllabic"],
+      "probe": { "type": "choose", "sets": [["there", "their", "they're"], ["to", "too", "two"], ["hear", "here"]] }
+    },
+
+    {
+      "id": "fl_rate_grade3",
+      "strand": "fluency",
+      "name": "Reads grade-3 text at a comfortable rate",
+      "description": "Roughly 110-120 correct words per minute by year end. Rate is a symptom of decoding, never the goal.",
+      "grade_band": "3",
+      "ordinal": 60,
+      "prereq": ["fl_rate_grade2", "ph_multisyllabic"],
+      "probe": { "type": "timed_read", "target_wcpm": 115 }
+    },
+    {
+      "id": "fl_silent_reading",
+      "strand": "fluency",
+      "name": "Reads silently and remembers it",
+      "description": "The shift from reading aloud to reading to yourself. Comprehension often dips here before it recovers.",
+      "grade_band": "3",
+      "ordinal": 70,
+      "prereq": ["fl_expression"],
+      "probe": { "type": "read_then_retell", "silent": true }
+    },
+
+    {
+      "id": "cm_main_idea_supporting",
+      "strand": "comprehension",
+      "name": "Names the main idea and the details that support it",
+      "grade_band": "3",
+      "ordinal": 90,
+      "prereq": ["cm_main_idea"],
+      "probe": { "type": "discuss", "prompt": "What is this mostly about? Which two sentences tell you that?" }
+    },
+    {
+      "id": "cm_summarize",
+      "strand": "comprehension",
+      "name": "Summarises without retelling everything",
+      "description": "Deciding what to leave out is the skill. Most children retell instead.",
+      "grade_band": "3",
+      "ordinal": 100,
+      "prereq": ["cm_main_idea_supporting"],
+      "probe": { "type": "produce", "prompt": "Tell me what happened in three sentences." }
+    },
+    {
+      "id": "cm_cause_effect",
+      "strand": "comprehension",
+      "name": "Explains why something happened",
+      "grade_band": "3",
+      "ordinal": 95,
+      "prereq": ["cm_question_answer"],
+      "probe": { "type": "qa", "question_types": ["why", "what caused"] }
+    },
+    {
+      "id": "cm_character_motivation",
+      "strand": "comprehension",
+      "name": "Explains why a character did something",
+      "description": "Requires holding what a character wants against what they do.",
+      "grade_band": "3",
+      "ordinal": 110,
+      "prereq": ["cm_inference"],
+      "probe": { "type": "discuss", "prompt": "Why did she do that? What did she want?" }
+    },
+    {
+      "id": "cm_use_evidence",
+      "strand": "comprehension",
+      "name": "Points to the part of the text that proves it",
+      "description": "The habit that separates an answer from a guess.",
+      "grade_band": "3",
+      "ordinal": 120,
+      "prereq": ["cm_inference"],
+      "probe": { "type": "locate", "prompt": "Show me where it says that." }
+    },
+    {
+      "id": "cm_text_structure",
+      "strand": "comprehension",
+      "name": "Notices how a text is organised",
+      "description": "In order, compared, problem and solution.",
+      "grade_band": "3",
+      "ordinal": 130,
+      "prereq": ["cm_nonfiction_features", "cm_cause_effect"],
+      "probe": { "type": "classify", "structures": ["sequence", "compare", "problem_solution", "description"] }
+    },
+    {
+      "id": "cm_point_of_view",
+      "strand": "comprehension",
+      "name": "Tells who is telling the story",
+      "grade_band": "3",
+      "ordinal": 140,
+      "prereq": ["cm_character_motivation"],
+      "probe": { "type": "discuss", "prompt": "Who is telling this? How would it be different if the other character told it?" }
+    },
+    {
+      "id": "cm_two_sources",
+      "strand": "comprehension",
+      "name": "Pulls information from two texts on one topic",
+      "grade_band": "3",
+      "ordinal": 150,
+      "prereq": ["cm_compare_texts", "cm_use_evidence"],
+      "probe": { "type": "discuss", "prompt": "What did you learn from both? What did only one of them say?" }
+    },
+
+    {
+      "id": "vo_morphology",
+      "strand": "vocabulary",
+      "name": "Works out a word from its prefix, root, and suffix",
+      "description": "The single highest-leverage vocabulary skill there is. One root unlocks a dozen words.",
+      "grade_band": "3",
+      "ordinal": 50,
+      "prereq": ["ph_root_words", "vo_context_clues"],
+      "probe": { "type": "discuss", "prompt": "What do you think {word} means? What parts do you recognise?", "words": ["unbreakable", "rewriting", "carelessly"] }
+    },
+    {
+      "id": "vo_shades_of_meaning",
+      "strand": "vocabulary",
+      "name": "Tells apart words that nearly mean the same",
+      "description": "Warm, hot, scorching. Precision rather than synonyms.",
+      "grade_band": "3",
+      "ordinal": 60,
+      "prereq": ["vo_antonyms_synonyms"],
+      "probe": { "type": "order", "sets": [["warm", "hot", "scorching"], ["liked", "loved", "adored"]] }
+    },
+    {
+      "id": "vo_figurative",
+      "strand": "vocabulary",
+      "name": "Understands sayings that do not mean what they say",
+      "description": "Raining cats and dogs. Often the sticking point for literal-minded readers.",
+      "grade_band": "3",
+      "ordinal": 70,
+      "prereq": ["vo_multiple_meaning", "cm_inference"],
+      "probe": { "type": "discuss", "prompt": "What does it really mean when we say {phrase}?" }
+    },
+    {
+      "id": "vo_reference_tools",
+      "strand": "vocabulary",
+      "name": "Looks a word up",
+      "grade_band": "3",
+      "ordinal": 80,
+      "prereq": ["vo_context_clues"],
+      "probe": { "type": "locate", "prompt": "Find what this word means. Which meaning fits our sentence?" }
+    }
+  ]
+}

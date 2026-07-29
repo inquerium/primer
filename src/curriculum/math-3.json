@@ -1,0 +1,327 @@
+{
+  "domain": "math",
+  "version": "0.1",
+  "note": "Grade 3. Multiplication and division as concepts before facts, fractions as quantities on a number line rather than pizza slices, and area as the place multiplication becomes visible. Prerequisites reach back into the K-2 pack.",
+  "skills": [
+    {
+      "id": "op_multiply_equal_groups",
+      "strand": "operations",
+      "name": "Sees multiplication as equal groups",
+      "description": "4 x 3 is four groups of three. The meaning before the fact.",
+      "grade_band": "3",
+      "ordinal": 200,
+      "prereq": ["op_equal_groups"],
+      "probe": { "type": "model", "prompt": "Show me {a} groups of {b}. How many altogether?", "range": [2, 6] }
+    },
+    {
+      "id": "op_multiply_array",
+      "strand": "operations",
+      "name": "Reads an array as multiplication",
+      "description": "Rows and columns. This is what makes area work later.",
+      "grade_band": "3",
+      "ordinal": 205,
+      "prereq": ["op_multiply_equal_groups"],
+      "probe": { "type": "array", "prompt": "How many dots? Write it as a multiplication." }
+    },
+    {
+      "id": "op_multiply_facts_2_5_10",
+      "strand": "operations",
+      "name": "Knows x2, x5, x10",
+      "description": "The skip-counting families come first because they already exist.",
+      "grade_band": "3",
+      "ordinal": 210,
+      "prereq": ["op_multiply_equal_groups", "cc_count_by_2s_5s"],
+      "probe": { "type": "arithmetic", "op": "x", "factors": [2, 5, 10], "fluent_ms": 4000 }
+    },
+    {
+      "id": "op_multiply_facts_all",
+      "strand": "operations",
+      "name": "Knows multiplication facts to 10 x 10",
+      "grade_band": "3",
+      "ordinal": 220,
+      "prereq": ["op_multiply_facts_2_5_10"],
+      "probe": { "type": "arithmetic", "op": "x", "max_factor": 10, "fluent_ms": 3000 }
+    },
+    {
+      "id": "op_multiply_commutative",
+      "strand": "operations",
+      "name": "Knows 3x8 and 8x3 are the same",
+      "description": "Halves what has to be memorized. Worth teaching outright.",
+      "grade_band": "3",
+      "ordinal": 215,
+      "prereq": ["op_multiply_array"],
+      "probe": { "type": "reason", "prompt": "You know 3x8=24. What else do you know?" }
+    },
+    {
+      "id": "op_divide_sharing",
+      "strand": "operations",
+      "name": "Divides by sharing out",
+      "description": "12 shared between 3 people. Division as an action, not a symbol.",
+      "grade_band": "3",
+      "ordinal": 230,
+      "prereq": ["op_multiply_equal_groups"],
+      "probe": { "type": "model", "prompt": "Share {total} between {groups}. How many each?" }
+    },
+    {
+      "id": "op_divide_as_inverse",
+      "strand": "operations",
+      "name": "Uses multiplication to divide",
+      "description": "24 / 3 is 'what times 3 makes 24'. The bridge that makes division learnable.",
+      "grade_band": "3",
+      "ordinal": 235,
+      "prereq": ["op_divide_sharing", "op_multiply_facts_all"],
+      "probe": { "type": "reason", "prompt": "How does knowing 8x3 help with 24 divided by 3?" }
+    },
+    {
+      "id": "op_divide_facts",
+      "strand": "operations",
+      "name": "Knows division facts to 100",
+      "grade_band": "3",
+      "ordinal": 240,
+      "prereq": ["op_divide_as_inverse"],
+      "probe": { "type": "arithmetic", "op": "/", "max_dividend": 100, "fluent_ms": 4000 }
+    },
+    {
+      "id": "op_add_3digit_regroup",
+      "strand": "operations",
+      "name": "Adds three-digit numbers",
+      "grade_band": "3",
+      "ordinal": 150,
+      "prereq": ["op_add_2digit_regroup", "pv_hundreds"],
+      "probe": { "type": "arithmetic", "op": "+", "digits": 3, "regroup": true }
+    },
+    {
+      "id": "op_sub_3digit_regroup",
+      "strand": "operations",
+      "name": "Subtracts three-digit numbers",
+      "description": "Regrouping across a zero is the hard case. Watch for it specifically.",
+      "grade_band": "3",
+      "ordinal": 160,
+      "prereq": ["op_sub_2digit_regroup", "pv_hundreds"],
+      "probe": { "type": "arithmetic", "op": "-", "digits": 3, "regroup": true, "include_zeros": true }
+    },
+    {
+      "id": "op_round_10_100",
+      "strand": "operations",
+      "name": "Rounds to the nearest ten and hundred",
+      "grade_band": "3",
+      "ordinal": 170,
+      "prereq": ["pv_hundreds"],
+      "probe": { "type": "round", "to": [10, 100], "range": [11, 999] }
+    },
+    {
+      "id": "op_estimate",
+      "strand": "operations",
+      "name": "Estimates before calculating",
+      "description": "Knowing roughly what the answer should be is how you catch your own mistakes.",
+      "grade_band": "3",
+      "ordinal": 175,
+      "prereq": ["op_round_10_100", "op_add_3digit_regroup"],
+      "probe": { "type": "estimate", "prompt": "About how much is {a} + {b}? Do not work it out exactly." }
+    },
+    {
+      "id": "op_multiply_by_multiples_of_10",
+      "strand": "operations",
+      "name": "Multiplies by tens",
+      "description": "4 x 30. Place value doing the work rather than a new fact.",
+      "grade_band": "3",
+      "ordinal": 250,
+      "prereq": ["op_multiply_facts_all", "pv_tens_ones"],
+      "probe": { "type": "arithmetic", "op": "x", "form": "n x m0" }
+    },
+    {
+      "id": "op_word_problem_multiply_divide",
+      "strand": "operations",
+      "name": "Solves multiplication and division word problems",
+      "grade_band": "3",
+      "ordinal": 260,
+      "prereq": ["op_divide_facts", "op_word_problem_2step"],
+      "probe": { "type": "word_problem", "operations": ["x", "/"], "use_interests": true }
+    },
+    {
+      "id": "op_two_step_mixed",
+      "strand": "operations",
+      "name": "Solves two-step problems with mixed operations",
+      "description": "Deciding which operation, and in what order, is the actual skill here.",
+      "grade_band": "3",
+      "ordinal": 270,
+      "prereq": ["op_word_problem_multiply_divide"],
+      "probe": { "type": "word_problem", "steps": 2, "mixed": true, "use_interests": true }
+    },
+
+    {
+      "id": "pv_thousands",
+      "strand": "place_value",
+      "name": "Reads numbers to 10,000",
+      "grade_band": "3",
+      "ordinal": 50,
+      "prereq": ["pv_hundreds"],
+      "probe": { "type": "decompose", "range": [1000, 9999] }
+    },
+    {
+      "id": "pv_compare_3digit",
+      "strand": "place_value",
+      "name": "Compares and orders three-digit numbers",
+      "grade_band": "3",
+      "ordinal": 45,
+      "prereq": ["pv_hundreds", "pv_compare_2digit"],
+      "probe": { "type": "compare", "range": [100, 999] }
+    },
+
+    {
+      "id": "fr_unit_fractions",
+      "strand": "fractions",
+      "name": "Understands a unit fraction",
+      "description": "1/4 is one of four equal parts. Equal is the word that gets skipped.",
+      "grade_band": "3",
+      "ordinal": 10,
+      "prereq": ["ge_partition_thirds"],
+      "probe": { "type": "identify", "prompt": "Which picture shows one fourth? Why not this one?" }
+    },
+    {
+      "id": "fr_build_fractions",
+      "strand": "fractions",
+      "name": "Builds a fraction from unit fractions",
+      "description": "3/4 is three lots of 1/4. This is what stops fractions being two unrelated numbers.",
+      "grade_band": "3",
+      "ordinal": 20,
+      "prereq": ["fr_unit_fractions"],
+      "probe": { "type": "model", "prompt": "Show me {n}/{d} using {d}ths." }
+    },
+    {
+      "id": "fr_number_line",
+      "strand": "fractions",
+      "name": "Places fractions on a number line",
+      "description": "A fraction is a number with a place, not just a piece of a shape.",
+      "grade_band": "3",
+      "ordinal": 30,
+      "prereq": ["fr_build_fractions", "pv_skip_on_number_line"],
+      "probe": { "type": "number_line", "fractions": true }
+    },
+    {
+      "id": "fr_equivalent",
+      "strand": "fractions",
+      "name": "Recognises equivalent fractions",
+      "grade_band": "3",
+      "ordinal": 40,
+      "prereq": ["fr_number_line"],
+      "probe": { "type": "match", "prompt": "Which of these is the same as 1/2?" }
+    },
+    {
+      "id": "fr_compare",
+      "strand": "fractions",
+      "name": "Compares fractions with the same numerator or denominator",
+      "description": "1/3 vs 1/8 catches the 'bigger number means bigger piece' error head on.",
+      "grade_band": "3",
+      "ordinal": 50,
+      "prereq": ["fr_equivalent"],
+      "probe": { "type": "compare", "fractions": true, "same": ["numerator", "denominator"] }
+    },
+    {
+      "id": "fr_whole_numbers",
+      "strand": "fractions",
+      "name": "Writes whole numbers as fractions",
+      "description": "4/4 = 1, and 3 = 3/1.",
+      "grade_band": "3",
+      "ordinal": 60,
+      "prereq": ["fr_equivalent"],
+      "probe": { "type": "convert", "prompt": "Write {n} as a fraction." }
+    },
+
+    {
+      "id": "md_time_minute",
+      "strand": "measurement",
+      "name": "Tells time to the minute",
+      "grade_band": "3",
+      "ordinal": 55,
+      "prereq": ["md_time_five_min"],
+      "probe": { "type": "clock", "granularity": "minute" }
+    },
+    {
+      "id": "md_elapsed_time",
+      "strand": "measurement",
+      "name": "Works out elapsed time",
+      "description": "Counting on across the hour is where this breaks.",
+      "grade_band": "3",
+      "ordinal": 58,
+      "prereq": ["md_time_minute"],
+      "probe": { "type": "elapsed", "prompt": "It is {start}. In {n} minutes, what time will it be?" }
+    },
+    {
+      "id": "md_perimeter",
+      "strand": "measurement",
+      "name": "Finds the perimeter of a shape",
+      "grade_band": "3",
+      "ordinal": 80,
+      "prereq": ["ge_shape_attributes", "op_add_3digit_regroup"],
+      "probe": { "type": "measure", "quantity": "perimeter" }
+    },
+    {
+      "id": "md_area_tiling",
+      "strand": "measurement",
+      "name": "Measures area by covering with squares",
+      "grade_band": "3",
+      "ordinal": 85,
+      "prereq": ["md_nonstandard_units", "op_multiply_array"],
+      "probe": { "type": "measure", "quantity": "area", "method": "tiling" }
+    },
+    {
+      "id": "md_area_multiply",
+      "strand": "measurement",
+      "name": "Finds area by multiplying",
+      "description": "Where multiplication stops being a table and becomes a picture.",
+      "grade_band": "3",
+      "ordinal": 90,
+      "prereq": ["md_area_tiling", "op_multiply_facts_all"],
+      "probe": { "type": "measure", "quantity": "area", "method": "formula" }
+    },
+    {
+      "id": "md_mass_volume",
+      "strand": "measurement",
+      "name": "Measures mass and liquid volume",
+      "grade_band": "3",
+      "ordinal": 95,
+      "prereq": ["md_ruler_inches_cm"],
+      "probe": { "type": "measure", "units": ["g", "kg", "ml", "l"] }
+    },
+    {
+      "id": "md_scaled_graphs",
+      "strand": "measurement",
+      "name": "Reads a graph where one square means more than one",
+      "description": "The scale is the whole difficulty. Expect it to be ignored at first.",
+      "grade_band": "3",
+      "ordinal": 100,
+      "prereq": ["md_bar_graph", "op_multiply_facts_2_5_10"],
+      "probe": { "type": "graph", "scaled": true, "use_interests": true }
+    },
+    {
+      "id": "md_line_plot",
+      "strand": "measurement",
+      "name": "Makes a line plot from measurements",
+      "grade_band": "3",
+      "ordinal": 105,
+      "prereq": ["md_scaled_graphs", "fr_number_line"],
+      "probe": { "type": "graph", "form": "line_plot" }
+    },
+
+    {
+      "id": "ge_quadrilaterals",
+      "strand": "geometry",
+      "name": "Sorts quadrilaterals",
+      "description": "A square is also a rectangle. Categories that overlap are the hard idea.",
+      "grade_band": "3",
+      "ordinal": 70,
+      "prereq": ["ge_shape_attributes"],
+      "probe": { "type": "classify", "set": ["square", "rectangle", "rhombus", "trapezoid"] }
+    },
+    {
+      "id": "ge_partition_area_fractions",
+      "strand": "geometry",
+      "name": "Splits a shape into equal areas and names the fraction",
+      "grade_band": "3",
+      "ordinal": 80,
+      "prereq": ["ge_partition_thirds", "fr_unit_fractions"],
+      "probe": { "type": "partition", "name_the_fraction": true }
+    }
+  ]
+}

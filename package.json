@@ -1,0 +1,54 @@
+{
+  "name": "primer-brain",
+  "version": "0.1.0",
+  "description": "An open learner record + MCP server. The memory layer for AI tutoring. No fixed interface â€” the tutor builds one per child, per moment.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "bin": {
+    "primer": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./runtime": "./src/surface/runtime.js"
+  },
+  "files": [
+    "dist",
+    "src/db/schema.sql",
+    "src/db/migrations",
+    "src/curriculum",
+    "src/surface/runtime.js",
+    "SPEC.md"
+  ],
+  "scripts": {
+    "build": "node scripts/embed-assets.mjs && tsc && node scripts/copy-assets.mjs",
+    "dev": "node --experimental-strip-types src/cli.ts",
+    "mcp": "node --experimental-strip-types src/mcp/server.ts",
+    "embed": "node scripts/embed-assets.mjs",
+    "prepare": "node scripts/embed-assets.mjs",
+    "package": "node scripts/embed-assets.mjs && node scripts/package.mjs --binary",
+    "test": "node scripts/embed-assets.mjs && node --experimental-strip-types --test test/*.test.ts",
+    "seed": "node --experimental-strip-types src/cli.ts curriculum:load"
+  },
+  "keywords": [
+    "education",
+    "mcp",
+    "learner-record",
+    "tutoring",
+    "adaptive-learning",
+    "bayesian-knowledge-tracing",
+    "spaced-repetition",
+    "primer"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.28.1",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "^5.9.3"
+  }
+}

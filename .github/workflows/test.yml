@@ -1,0 +1,100 @@
+name: test
+
+# A record that holds a child's history should never regress quietly. This runs on
+# the two operating systems families actually use, on the oldest Node that supports
+# `node:sqlite` without a flag as well as current LTS.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['22.13', '24']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
+
+      # The curriculum is data, and a broken prerequisite graph mis-teaches a real
+      # child rather than throwing. Load it for real and refuse warnings.
+      - name: curriculum loads clean
+        shell: bash
+        run: |
+          out=$(PRIMER_HOME="$RUNNER_TEMP/primer-ci" node dist/cli.js init)
+          echo "$out"
+          echo "$out" | node -e '
+            let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+              const r = JSON.parse(s);
+              if (r.warnings.length) { console.error("curriculum warnings:", r.warnings); process.exit(1); }
+              if (r.skills < 200) { console.error("expected the full curriculum, got", r.skills); process.exit(1); }
+            });
+          '
+
+  # Build the thing a user actually installs, on every push rather than only at
+  # release time. Packaging breaks in ways the source tests cannot see — the bundle
+  # resolving assets that are not there, an ESM/CJS mismatch — and finding that out
+  # while cutting a release is finding out too late.
+  binary:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: node scripts/package.mjs --binary
+
+      - name: it runs with no repository beside it
+        shell: bash
+        env:
+          PRIMER_HOME: ${{ runner.temp }}/primer-binary
+        run: |
+          set -eu
+          name=primer
+          [ "${{ runner.os }}" = "Windows" ] && name=primer.exe
+          work=$(mktemp -d)
+          cp "build/$name" "$work/$name"
+          cd "$work"
+          "./$name" init
+          n=$("./$name" where | grep -o '"n": [0-9]*' | grep -o '[0-9]*')
+          [ "$n" -gt 100 ] || { echo "the embedded curriculum did not load: $n skills"; exit 1; }
+          "./$name" where | grep -q 'standalone binary' || {
+            echo "the binary does not know it is packaged, so the tutor will spawn its MCP server wrong"
+            exit 1; }
+          echo "ok: $n skills, packaging detected"
+
+  # Node without `node:sqlite` must fail with a sentence, not a stack trace.
+  old-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --ignore-scripts
+      - name: refuses politely
+        run: |
+          npx tsc || true
+          set +e
+          output=$(node dist/cli.js where 2>&1)
+          code=$?
+          set -e
+          echo "$output"
+          if [ $code -eq 0 ]; then echo "should have refused to run"; exit 1; fi
+          echo "$output" | grep -q "Node 22.13 or newer" || {
+            echo "a parent on old Node needs a sentence, not ERR_UNKNOWN_BUILTIN_MODULE"; exit 1; }
