@@ -178,7 +178,15 @@ function deviceSetup(child: Learner, slug: string): string {
     ? `<li>First, on the tablet, open <code style="word-break:break-all">${escapeHtml(caUrl)}</code>
        and install the certificate. On iPad: Settings → Profile Downloaded → Install, then
        Settings → General → About → Certificate Trust Settings → enable full trust for
-       “Primer Local”. On Android: Settings → Security → install a CA certificate.</li>`
+       “Primer Local”. On Android: Settings → Security → install a CA certificate.
+       <p class="muted" style="margin:.4rem 0 0">Be honest with yourself about what this
+       step does: it does not just let this tablet talk to primer. A device that trusts
+       this certificate trusts <em>anything</em> signed with it for <em>any</em> website —
+       so if the private key on this computer were ever stolen, someone on the network
+       could impersonate any site that tablet visits. That key never leaves this machine
+       and nothing here uploads it anywhere; the only real exposure is this computer
+       itself. Only install the certificate on devices you control, and remove it
+       (same Settings screen) if you ever stop using primer on this tablet.</p></li>`
     : '';
 
   const tlsNote = https

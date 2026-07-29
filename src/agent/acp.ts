@@ -98,20 +98,36 @@ function emptyUsage(): ClaudeCodeResult['usage'] {
   return { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0 };
 }
 
-function isPrimerTool(title: string | undefined, rawInput: unknown): boolean {
-  const hay = `${title ?? ''} ${typeof rawInput === 'string' ? rawInput : JSON.stringify(rawInput ?? {})}`;
-  if (/mcp__primer__|primer_/i.test(hay)) return true;
-  return AUTONOMOUS_TOOLS.some((t) => hay.includes(t));
+// The exact, programmatic tool names this transport may auto-allow — the same
+// naming Claude Code itself uses for an MCP tool (`mcp__<server>__<tool>`), so
+// this stays in lockstep with AUTONOMOUS_TOOLS rather than duplicating the list.
+const ALLOWED_ACP_TOOLS = new Set(AUTONOMOUS_TOOLS.map((t) => `mcp__primer__${t}`));
+
+/**
+ * Is this tool call unambiguously one of primer's own MCP tools?
+ *
+ * `toolCall.name` is ACP's "programmatic name of the tool being invoked" — the
+ * one field the agent cannot phrase however it likes. `title` and `rawInput`
+ * exist for display and cannot be trusted here: they are free text the model
+ * chose, and a first version of this check matched substrings against them. That
+ * meant a Bash or WebFetch call whose title happened to mention a primer tool
+ * name — trivial for a prompt-injected model to produce, since it decides both
+ * the tool and the title — would read as "looks like a primer tool" and get
+ * auto-approved. `name` is documented as optional; when it is missing there is
+ * no trustworthy signal at all, so this denies rather than falling back to text.
+ */
+export function isPrimerTool(name: string | null | undefined): boolean {
+  return typeof name === 'string' && ALLOWED_ACP_TOOLS.has(name);
 }
 
 /**
  * Auto-allow primer MCP tools; refuse everything else (filesystem, shell, web).
  * An unattended tutoring run must not inherit the agent's full coding powers.
  */
-function pickPermission(
+export function pickPermission(
   params: acp.RequestPermissionRequest,
 ): acp.RequestPermissionResponse {
-  const allow = isPrimerTool(params.toolCall?.title ?? undefined, params.toolCall?.rawInput);
+  const allow = isPrimerTool(params.toolCall?.name);
   const options = params.options ?? [];
   const preferred = allow
     ? options.find((o) => o.kind === 'allow_once' || o.kind === 'allow_always') ??
