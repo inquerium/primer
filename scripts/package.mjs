@@ -67,8 +67,12 @@ writeFileSync(
   config,
   JSON.stringify(
     {
-      main: join(build, 'primer.cjs'),
-      output: join(build, 'sea-prep.blob'),
+      // Relative, and resolved against sea-config.json's own directory by Node's
+      // SEA builder — an absolute path here gets written into the blob and ships
+      // inside the binary, leaking the maintainer's home directory (and username)
+      // into every download and into every stack trace it ever prints.
+      main: 'primer.cjs',
+      output: 'sea-prep.blob',
       disableExperimentalSEAWarning: true,
       useSnapshot: false,
       useCodeCache: false,
@@ -78,9 +82,13 @@ writeFileSync(
   ),
 );
 
-execFileSync(process.execPath, ['--experimental-sea-config', config], {
+// Despite the docs, Node resolves `main`/`output` in sea-config.json against the
+// process cwd, not the config file's own directory — so cwd has to be build/ for
+// the relative paths above to mean anything, and that also keeps the absolute
+// path off the build machine out of the shipped blob.
+execFileSync(process.execPath, ['--experimental-sea-config', 'sea-config.json'], {
   stdio: 'inherit',
-  cwd: root,
+  cwd: build,
 });
 
 const windows = process.platform === 'win32';

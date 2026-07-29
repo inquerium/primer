@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { all, one, run, tx, id, now, logEvent, parseJson, primerHome } from '../db/index.ts';
+import { artifactsDir } from './artifacts.ts';
 import type { Learner, Mastery } from '../domain/types.ts';
 import { ageYears, interests, accommodations } from './learners.ts';
 import { statusNow } from './mastery.ts';
@@ -237,16 +238,42 @@ export function importRecord(data: Record<string, any>): {
   // Without this, importing a record that shares an origin with this one collides
   // on primary key and the rows are silently dropped — which looks like a
   // successful import of an empty history.
+  //
+  // The prefix of the new id is taken from the old one only after validating it —
+  // an import file is an untrusted document, and this string used to flow straight
+  // into `id()` and from there into `onclick="...('${id}')"` in the review and
+  // progress pages, and into filenames written to disk. A crafted prefix meant
+  // stored XSS on the parent's own review page (which runs with `unsafe-inline`)
+  // and, separately, a path outside the interfaces directory.
+  const safePrefix = (old: string): string => {
+    const candidate = old.includes('_') ? old.slice(0, old.indexOf('_')) : old;
+    return /^[a-z]{2,8}$/.test(candidate) ? candidate : 'row';
+  };
   const remap = new Map<string, string>([[source.id, newId]]);
   for (const table of TABLES) {
     for (const row of (data[table] ?? []) as Record<string, unknown>[]) {
       const old = row['id'];
       if (typeof old === 'string' && !remap.has(old)) {
-        remap.set(old, id(old.includes('_') ? old.slice(0, old.indexOf('_')) : 'row'));
+        remap.set(old, id(safePrefix(old)));
       }
     }
   }
   const REFERENCE_COLUMNS = ['id', 'learner_id', 'session_id', 'interface_id', 'supersedes'];
+
+  // The insert below builds its column list from the keys of each incoming row.
+  // Those keys come from the import file too, so without a whitelist an attacker
+  // can add a key like `id, learner_id, path) SELECT ... --` and inject SQL through
+  // the identifier list — the values are parameterised, the column names were not.
+  // Real columns only; anything else is silently dropped rather than failing the
+  // whole row, since an export from a newer primer may carry columns this one
+  // predates.
+  const tableColumns = new Map<string, Set<string>>();
+  for (const table of TABLES) {
+    tableColumns.set(
+      table,
+      new Set(all<{ name: string }>(`PRAGMA table_info(${table})`).map((c) => c.name)),
+    );
+  }
 
   tx(() => {
     run(
@@ -287,16 +314,34 @@ export function importRecord(data: Record<string, any>): {
           const inlined = typeof record['html'] === 'string' ? (record['html'] as string) : null;
           // `html` is carried in the export envelope, not a column on the table.
           delete record['html'];
-          const written = inlined
+          const landedAt = inlined
             ? writeInterfaceFile(inlined, String(record['id']))
             : typeof record['path'] === 'string'
               ? adoptInterfaceFile(record['path'], String(record['id']))
               : null;
-          if (written) record['path'] = written;
+          if (landedAt) record['path'] = landedAt;
           else warnings.push(`interface "${record['title']}": no HTML in the export, will not open`);
         }
 
-        const columns = Object.keys(record);
+        // An artifact row likewise points at a file — a recording — on the machine
+        // that exported it. Without this, an imported `path` was stored verbatim:
+        // an attacker-supplied export naming an arbitrary file (a tax return, an
+        // SSH key) meant that deleting the imported "child" later, via the delete
+        // feature that exists specifically to be trustworthy, deleted that file.
+        // The rule is the same as for interfaces: copy the real file across if it
+        // exists on this machine, otherwise drop the pointer and say so.
+        if (table === 'artifact') {
+          const source = typeof record['path'] === 'string' ? record['path'] : null;
+          const landedAt = source ? adoptArtifactFile(source, String(record['id'])) : null;
+          if (landedAt) record['path'] = landedAt;
+          else {
+            warnings.push(`artifact: source file missing, recording dropped`);
+            continue; // an artifact row with no file is not worth keeping
+          }
+        }
+
+        const allowed = tableColumns.get(table)!;
+        const columns = Object.keys(record).filter((c) => allowed.has(c));
         const placeholders = columns.map(() => '?').join(', ');
         try {
           run(
@@ -317,11 +362,25 @@ export function importRecord(data: Record<string, any>): {
   return { learner_id: newId, name: source.display_name, rows, warnings };
 }
 
+/**
+ * Resolve `name` under `dir` and refuse anything that would land outside it.
+ *
+ * `name` is always a freshly generated id here, so this should never fire — it is
+ * the second layer, in case a future caller passes something less trustworthy.
+ */
+function withinDir(dir: string, name: string): string {
+  const target = resolve(join(dir, name));
+  if (target !== resolve(dir) && !target.startsWith(resolve(dir) + sep)) {
+    throw new Error(`refusing to write outside ${dir}: ${name}`);
+  }
+  return target;
+}
+
 /** Write an imported interface's inlined HTML into this install. */
 function writeInterfaceFile(html: string, newInterfaceId: string): string {
   const dir = join(primerHome(), 'interfaces');
   mkdirSync(dir, { recursive: true });
-  const target = join(dir, `${newInterfaceId}.html`);
+  const target = withinDir(dir, `${newInterfaceId}.html`);
   writeFileSync(target, html, 'utf8');
   return target;
 }
@@ -331,7 +390,20 @@ function adoptInterfaceFile(sourcePath: string, newInterfaceId: string): string 
   if (!existsSync(sourcePath)) return null;
   const dir = join(primerHome(), 'interfaces');
   mkdirSync(dir, { recursive: true });
-  const target = join(dir, `${newInterfaceId}.html`);
+  const target = withinDir(dir, `${newInterfaceId}.html`);
+  copyFileSync(sourcePath, target);
+  return target;
+}
+
+/** Copy an imported artifact's recording into this install. Returns the new path. */
+function adoptArtifactFile(sourcePath: string, newArtifactId: string): string | null {
+  if (!existsSync(sourcePath)) return null;
+  const dir = artifactsDir();
+  const ext = sourcePath.slice(sourcePath.lastIndexOf('.'));
+  // The extension comes off the source path, so constrain it to something that
+  // cannot itself be a traversal (`../../x.html`) or carry a null byte.
+  const safeExt = /^\.[a-z0-9]{1,5}$/i.test(ext) ? ext : '.bin';
+  const target = withinDir(dir, `${newArtifactId}${safeExt}`);
   copyFileSync(sourcePath, target);
   return target;
 }

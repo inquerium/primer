@@ -391,13 +391,18 @@ computer. Making it work on the tablet needs HTTPS, which is not set up yet.</p>
   <div>${escapeHtml(c.prompt ?? 'Reading aloud')}
     <span class="muted">— ${timeAgo(c.recorded_at)}${c.duration_seconds ? `, ${c.duration_seconds}s` : ''}</span>
   </div>
-  <audio controls preload="none" src="${c.url}" style="width:100%;margin-top:.4rem"></audio>
+  <audio controls preload="none" src="${escapeHtml(c.url)}" style="width:100%;margin-top:.4rem"></audio>
   ${c.transcript ? `<p class="muted">“${escapeHtml(c.transcript)}”</p>` : ''}
   ${
     c.reviewed
       ? '<p class="muted">You have listened to this.</p>'
+      // The id goes in a data- attribute, not inside the onclick string: an id is
+      // an untrusted value once a record has been imported from elsewhere, and
+      // concatenating it into a JS string literal is how that becomes stored XSS
+      // on this page, which runs with unsafe-inline and can act as the parent.
       : `<p class="muted">Not listened to yet.
-         <button onclick="heard('${c.id}')" style="font:inherit;padding:.2rem .7rem;
+         <button data-artifact="${escapeHtml(c.id)}" onclick="heard(this.dataset.artifact)"
+           style="font:inherit;padding:.2rem .7rem;
            border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer">Mark as heard</button></p>`
   }
 </li>`,
@@ -520,15 +525,19 @@ function reviewCard(a: PlannedActivity): string {
   // the attribute, so an escaped apostrophe becomes a real one — a child called
   // O'Brien would otherwise break the only control in the product, and a name
   // containing markup would run on the adult's page.
-  return `<div class="card" id="c_${a.id}" data-activity="${a.id}"
+  // Every id below is escaped even though it is normally an internally-generated
+  // string, because it stops being one the moment a record has been imported — an
+  // import file is an untrusted document, and this page runs with unsafe-inline,
+  // so an unescaped id here is stored XSS on the parent's own approval gate.
+  return `<div class="card" id="c_${escapeHtml(a.id)}" data-activity="${escapeHtml(a.id)}"
     data-name="${name}" data-subject="${p.subject}" data-possessive="${p.possessive}">
   <h2>${escapeHtml(a.title)}</h2>
   <p>${escapeHtml(lead || 'The tutor did not say what this is. Worth rejecting and asking why.')}</p>
   ${rest ? `<details><summary class="muted">Why this, why now</summary><p class="muted">${escapeHtml(rest)}</p></details>` : ''}
   <p class="muted" style="margin-top:.9rem">Prepared ${timeAgo(a.created_at)} for ${name}</p>
-  <p><a class="big" href="/i/${a.interface_id}" target="_blank" rel="noopener">Try it yourself</a>
+  <p><a class="big" href="/i/${encodeURIComponent(a.interface_id ?? '')}" target="_blank" rel="noopener">Try it yourself</a>
      <span class="muted">opens in a new tab — nothing you do counts as theirs</span></p>
-  <textarea id="n_${a.id}" style="width:100%;min-height:3.2rem;font:inherit;padding:.5rem;
+  <textarea id="n_${escapeHtml(a.id)}" style="width:100%;min-height:3.2rem;font:inherit;padding:.5rem;
     border:1px solid var(--line);border-radius:6px;margin-top:.8rem"
     placeholder="Optional: tell the tutor what you think."></textarea>
   <p class="row" style="margin-top:.6rem">

@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -10,7 +10,7 @@ process.env.PRIMER_DB = join(home, 'record.db');
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.ANTHROPIC_AUTH_TOKEN;
 
-const { db, closeDb, all, run } = await import('../src/db/index.ts');
+const { db, closeDb, all, run, id, now } = await import('../src/db/index.ts');
 const { loadCurriculum } = await import('../src/curriculum/load.ts');
 const { createLearner } = await import('../src/record/learners.ts');
 const { recordObservations, startSession, endSession } = await import('../src/record/observations.ts');
@@ -484,4 +484,106 @@ test('an exported record carries its activities, not just paths to them', () => 
   assert.ok(landed, 'the activity should have come across');
   assert.ok(existsSync(landed.path), 'the imported activity has no file behind it');
   assert.match(readFileSync(landed.path, 'utf8'), /buried words/);
+});
+
+test('importing a hostile record cannot point an artifact at an arbitrary file', () => {
+  // A record file is an untrusted document — it can arrive from anyone, claiming to
+  // be "Emma's old school record". If an artifact row's `path` is trusted verbatim,
+  // deleting that imported "child" later (the feature that exists to be
+  // trustworthy) deletes whatever file the attacker named.
+  const victim = join(tmpdir(), `victim-${id('x')}.txt`);
+  writeFileSync(victim, 'do not delete me', 'utf8');
+
+  const dump = {
+    format: 'open-learner-record',
+    learner: [{ id: 'lrn_evil', display_name: 'Totally Normal Kid' }],
+    artifact: [
+      { id: 'art_a', learner_id: 'lrn_evil', ts: now(), kind: 'audio', path: victim, mime: 'audio/webm' },
+    ],
+  };
+
+  const imported = importRecord(dump);
+  const row = all<{ path: string }>(
+    `SELECT path FROM artifact WHERE learner_id = ?`,
+    imported.learner_id,
+  )[0];
+
+  assert.ok(row, 'the artifact row should not simply vanish');
+  assert.notEqual(row.path, victim, 'an imported artifact must never point outside the artifacts directory');
+  assert.ok(existsSync(victim), 'the victim file must survive the import untouched');
+});
+
+test('a crafted id in an import cannot break out of the interfaces directory', () => {
+  const outside = join(tmpdir(), `escape-${id('x')}.html`);
+
+  const dump = {
+    format: 'open-learner-record',
+    learner: [{ id: 'lrn_evil2', display_name: 'Another Kid' }],
+    interface: [
+      {
+        id: `../../../../../../../../..${outside.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/')}`,
+        learner_id: 'lrn_evil2',
+        title: 'x',
+        html: 'attacker content',
+      },
+    ],
+  };
+
+  importRecord(dump);
+  assert.ok(!existsSync(outside), 'a crafted id must not let a write land outside the interfaces directory');
+});
+
+test('a crafted id in an import cannot inject SQL through the column list', () => {
+  const before = all(`SELECT value FROM setting WHERE key = 'child_token'`);
+
+  const dump = {
+    format: 'open-learner-record',
+    learner: [{ id: 'lrn_evil3', display_name: 'SQLi Kid' }],
+    note: [
+      {
+        "id, learner_id, author_role, text, created_at) SELECT id, learner_id, 'parent', value, created_at FROM setting WHERE key='child_token' --":
+          'x',
+        learner_id: 'lrn_evil3',
+        author_role: 'parent',
+        text: 'harmless note',
+        created_at: now(),
+      },
+    ],
+  };
+
+  // Must not throw with a syntax error, and must not read another table's data
+  // into a row this import controls.
+  const imported = importRecord(dump);
+  const notes = all<{ text: string }>(`SELECT text FROM note WHERE learner_id = ?`, imported.learner_id);
+  assert.ok(
+    notes.every((n) => n.text !== before[0]?.['value' as never]),
+    'an imported row must never carry another table’s secret through a crafted column name',
+  );
+});
+
+test('an imported id cannot carry markup into the review or progress pages', async () => {
+  const dump = {
+    format: 'open-learner-record',
+    learner: [{ id: 'lrn_evil4', display_name: 'XSS Kid' }],
+    planned_activity: [
+      {
+        id: 'pln_a\'-onmouseover="alert(1)',
+        learner_id: 'lrn_evil4',
+        title: 'x',
+        status: 'ready',
+        rationale: 'x',
+        created_at: now(),
+      },
+    ],
+  };
+
+  const imported = importRecord(dump);
+  const row = all<{ id: string }>(
+    `SELECT id FROM planned_activity WHERE learner_id = ?`,
+    imported.learner_id,
+  )[0];
+  assert.ok(row, 'the row should still import');
+  // The id must come from a *validated* prefix, never the raw attacker string —
+  // it is the thing concatenated into HTML attributes on the parent's own pages.
+  assert.doesNotMatch(row.id, /["'<>]/, 'an imported id must never carry HTML-breaking characters');
 });

@@ -71,13 +71,13 @@ is no API key.
 **macOS / Linux**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vedan/primer/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/VedSoni-dev/primer/main/install.sh | sh
 ```
 
 **Windows**
 
 ```bash
-irm https://raw.githubusercontent.com/vedan/primer/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/VedSoni-dev/primer/main/install.ps1 | iex
 ```
 
 One file lands in `~/.local/bin` — the same directory Claude Code installs itself

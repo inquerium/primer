@@ -175,28 +175,44 @@ function unitPath(): string {
   return join(base, 'systemd', 'user', 'primer.service');
 }
 
+/**
+ * A newline in any interpolated value would start a new directive — turning, say,
+ * `ExecStartPost=` into something an attacker chose — and a bare `%` is a systemd
+ * specifier that fails the unit to parse rather than being taken literally. Every
+ * value going into systemdUnit passes through this first.
+ */
+function unitSafe(value: string): string {
+  if (/[\r\n]/.test(value)) throw new Error(`refusing to write a unit file: "${value}" contains a newline`);
+  return value.replace(/%/g, '%%');
+}
+
 export function systemdUnit(opts: ServiceOptions): string {
   const [command, ...args] = launchCommand(opts);
   // systemd splits ExecStart on whitespace unless arguments are quoted, and a home
   // directory with a space in it is ordinary on a family machine.
-  const exec = [command!, ...args].map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(' ');
-  const path = `${join(homedir(), '.local', 'bin')}:/usr/local/bin:/usr/bin:/bin`;
+  const exec = [command!, ...args]
+    .map(unitSafe)
+    .map((a) => (/\s/.test(a) ? `"${a}"` : a))
+    .join(' ');
+  const path = unitSafe(`${join(homedir(), '.local', 'bin')}:/usr/local/bin:/usr/bin:/bin`);
+  const home = unitSafe(primerHome());
+  const db = unitSafe(dbPath());
 
   return `[Unit]
 Description=primer — prepares learning activities between sessions
-Documentation=https://github.com/vedan/primer
+Documentation=https://github.com/VedSoni-dev/primer
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 ExecStart=${exec}
-WorkingDirectory=${primerHome()}
+WorkingDirectory=${home}
 # A user unit gets a minimal PATH, so the Claude Code binary in ~/.local/bin is
 # not found without this — the same trap as the macOS LaunchAgent.
 Environment=PATH=${path}
-Environment=PRIMER_HOME=${primerHome()}
-Environment=PRIMER_DB=${dbPath()}
+Environment=PRIMER_HOME=${home}
+Environment=PRIMER_DB=${db}
 Restart=always
 RestartSec=30
 # Journald already timestamps and rotates; a log file here would do neither.

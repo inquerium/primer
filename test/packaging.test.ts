@@ -71,7 +71,7 @@ test('the installers do not need root, npm, or a compiler', () => {
     !executed.some((line) => /(^|[;&|]\s*)npm\s/.test(line)),
     'installing must not require a toolchain',
   );
-  assert.match(shell, /curl -fsSL "\$url"/, 'the installer must download the release asset');
+  assert.match(shell, /curl -fsSL[^\n]*"\$url"/, 'the installer must download the release asset');
 });
 
 test('the record can be built with no repository on disk', () => {
@@ -92,6 +92,33 @@ test('the record can be built with no repository on disk', () => {
     ([, body]) => (JSON.parse(body) as { skills?: unknown[] }).skills ?? [],
   );
   assert.ok(skills.length > 100, `only ${skills.length} skills embedded`);
+});
+
+test('a missing checksum refuses the install on the official path', () => {
+  // Suppressing one HTTP request must not be enough to disable the only integrity
+  // check an installer has. Both scripts must fail closed unless PRIMER_URL — an
+  // explicit, opted-in override — is set.
+  for (const file of ['install.sh', 'install.ps1']) {
+    const body = read(file);
+    assert.match(
+      body,
+      /PRIMER_URL/,
+      `${file} must only skip verification for the explicit PRIMER_URL override`,
+    );
+  }
+  const shell = read('install.sh');
+  assert.match(shell, /refusing to install an unverified binary/);
+  const ps = read('install.ps1');
+  assert.match(ps, /refusing to install an unverified binary/);
+});
+
+test('the shipped binary does not embed the build machine’s path', () => {
+  const script = read('scripts/package.mjs');
+  assert.doesNotMatch(
+    script,
+    /main:\s*join\(build/,
+    'sea-config.json main must be relative, or the build machine’s absolute path ships inside every binary',
+  );
 });
 
 test('the packaging script bundles for the runtime that actually loads it', () => {

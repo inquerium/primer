@@ -337,7 +337,16 @@ export function createSurfaceServer(port = DEFAULT_PORT, opts: SurfaceOptions = 
           json(res, 400, { error: 'learner_id is required' });
           return;
         }
-        const learner = resolveLearner(learnerId);
+        // resolveLearner's own error message lists every child's name and id — apt
+        // for a CLI operator, not for a response handed to whatever is holding the
+        // LAN token. This route is the one reachable from a child's device.
+        let learner;
+        try {
+          learner = resolveLearner(learnerId);
+        } catch {
+          json(res, 404, { error: 'no such learner' });
+          return;
+        }
         const data = await readBinary(req);
         if (!data.length) {
           json(res, 400, { error: 'empty body' });
