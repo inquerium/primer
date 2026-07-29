@@ -138,6 +138,7 @@ const ADULT_ONLY = [
   /^\/artifacts\//,
   /^\/how$/,
   /^\/ca\.(cer|pem)$/,
+  /^\/api\/app(\/|$)/,
 ];
 
 export interface GuardOptions {

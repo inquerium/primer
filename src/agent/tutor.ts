@@ -3,7 +3,7 @@ import { resolveLearner } from '../record/learners.ts';
 import { readyCount } from '../record/queue.ts';
 import { AUTONOMOUS_PROMPT } from './prompt.ts';
 import { settings, budget, costOf, type TokenUsage } from './config.ts';
-import { runClaudeCode } from './claude-code.ts';
+import { runTutorModel, type TutorTransport } from './acp.ts';
 
 const MAX_TURNS = 30;
 
@@ -15,6 +15,7 @@ export interface RunOptions {
   maxBudgetUsd?: number;
   dryRun?: boolean;
   signal?: AbortSignal;
+  onUpdate?: Parameters<typeof runTutorModel>[0]['onUpdate'];
 }
 
 export interface RunResult {
@@ -25,6 +26,7 @@ export interface RunResult {
   cost_usd: number;
   turns: number;
   usage: TokenUsage;
+  transport?: TutorTransport;
 }
 
 function emptyUsage(): TokenUsage {
@@ -116,7 +118,7 @@ export async function runTutor(learnerRef: string, opts: RunOptions = {}): Promi
     opts.maxBudgetUsd ?? Math.min(spend.remaining_today, spend.remaining_this_month),
   );
 
-  const result = await runClaudeCode({
+  const result = await runTutorModel({
     systemPrompt: AUTONOMOUS_PROMPT,
     prompt:
       `Plan the next session for ${learner.display_name}.\n\n` +
@@ -129,6 +131,7 @@ export async function runTutor(learnerRef: string, opts: RunOptions = {}): Promi
     maxTurns: MAX_TURNS,
     surfacePort: opts.surfacePort,
     signal: opts.signal,
+    onUpdate: opts.onUpdate,
   });
 
   usage = result.usage;
@@ -141,12 +144,15 @@ export async function runTutor(learnerRef: string, opts: RunOptions = {}): Promi
     result.cost_usd > 0 ? result.cost_usd : costOf(config.model, result.usage);
 
   if (!result.ok) {
-    return finish('error', result.text, {
-      turns: result.turns,
-      activities: planned,
-      error: result.failure ?? 'error',
-      cost,
-    });
+    return {
+      ...finish('error', result.text, {
+        turns: result.turns,
+        activities: planned,
+        error: result.failure ?? 'error',
+        cost,
+      }),
+      transport: result.transport,
+    };
   }
 
   if (result.denials?.length) {
@@ -156,12 +162,19 @@ export async function runTutor(learnerRef: string, opts: RunOptions = {}): Promi
     logEvent('tutor:claude', 'tool_denied', runId, result.denials);
   }
 
-  logEvent('tutor:claude', 'agent_run_end', runId, { planned, turns: result.turns });
-  return finish('ok', result.text || `${planned} activities queued.`, {
+  logEvent('tutor:claude', 'agent_run_end', runId, {
+    planned,
     turns: result.turns,
-    activities: planned,
-    cost,
+    transport: result.transport,
   });
+  return {
+    ...finish('ok', result.text || `${planned} activities queued.`, {
+      turns: result.turns,
+      activities: planned,
+      cost,
+    }),
+    transport: result.transport,
+  };
 }
 
 function countActivities(learnerId: string): number {

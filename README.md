@@ -86,9 +86,14 @@ not. No Node, no npm, no build step, no admin rights. Uninstalling is deleting t
 file.
 
 ```bash
-primer demo     # seeds Ada: a six-year-old with eight weeks of history
-primer start    # sets up, runs everything, prints one URL
+primer start    # opens the parent app in your browser
+primer demo     # optional: seed Ada, a six-year-old with history
 ```
+
+In the app: add a child, tap **Prepare work**, approve what shows up, hand the tablet
+over. Wi‑Fi sharing and tablet HTTPS are toggles on that same page — no flags to
+memorize. Claude is reached through ACP when `claude-code-acp` is installed, otherwise
+through the Claude Code CLI; either way it uses your existing login.
 
 Open the URL. That is the whole interface for an adult: who your children are, what
 is waiting for you to approve, and how they are doing.

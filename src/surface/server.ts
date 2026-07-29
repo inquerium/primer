@@ -14,9 +14,12 @@ import {
   approve,
   reject,
 } from '../record/queue.ts';
-import { homePage, reviewPage, progressPage, nothingWaitingPage, howPage } from './pages.ts';
+import { reviewPage, progressPage, nothingWaitingPage, howPage } from './pages.ts';
+import { parentAppPage, appStatus, addChildFromApp } from './app.ts';
 import { saveArtifact, describeArtifact, markReviewed } from '../record/artifacts.ts';
-import { settings, setDeviceCapabilities } from '../agent/config.ts';
+import { settings, setSetting, setDeviceCapabilities } from '../agent/config.ts';
+import { runTutor } from '../agent/tutor.ts';
+import { seedDemo } from '../demo.ts';
 import {
   SERVICE_WORKER,
   appHead,
@@ -234,6 +237,62 @@ export async function createSurfaceServer(
 
       if (req.method === 'GET' && path === '/health') {
         json(res, 200, { ok: true, port });
+        return;
+      }
+
+      // Parent app — adult-only. Status snapshot for the shell.
+      if (req.method === 'GET' && path === '/api/app/status') {
+        json(
+          res,
+          200,
+          appStatus({ port, lan: Boolean(opts.lan), https, caPort: https ? port + 1 : undefined }),
+        );
+        return;
+      }
+
+      if (req.method === 'POST' && path === '/api/app/learner') {
+        const body = await readBody(req);
+        const child = addChildFromApp(String(body.name ?? ''), body.birth ? String(body.birth) : undefined);
+        json(res, 200, { id: child.id, name: child.display_name });
+        return;
+      }
+
+      if (req.method === 'POST' && path === '/api/app/demo') {
+        const seeded = seedDemo();
+        json(res, 200, { id: seeded.learner.id, name: seeded.learner.display_name });
+        return;
+      }
+
+      if (req.method === 'POST' && path === '/api/app/prepare') {
+        const body = await readBody(req);
+        const learner = String(body.learner ?? '');
+        if (!learner) {
+          json(res, 400, { error: 'learner required' });
+          return;
+        }
+        const result = await runTutor(learner, {
+          trigger: 'manual',
+          surfacePort: port,
+        });
+        json(res, 200, result);
+        return;
+      }
+
+      if (req.method === 'POST' && path === '/api/app/flags') {
+        const body = await readBody(req);
+        if (typeof body.lan === 'boolean') setSetting('surface_lan', body.lan ? 'true' : 'false', 'app');
+        if (typeof body.https === 'boolean') {
+          setSetting('surface_https', body.https ? 'true' : 'false', 'app');
+          if (body.https) setSetting('surface_lan', 'true', 'app');
+        }
+        const next = settings();
+        json(res, 200, {
+          lan: next.surface_lan,
+          https: next.surface_https,
+          restart: true,
+          message:
+            'Saved. Stop primer and start it again — it will come back with these settings.',
+        });
         return;
       }
 
@@ -544,7 +603,11 @@ export async function createSurfaceServer(
 
       if (req.method === 'GET' && path === '/') {
         res.writeHead(200, HTML(ADULT_CSP));
-        res.end(homePage());
+        res.end(
+          parentAppPage(
+            appStatus({ port, lan: Boolean(opts.lan), https, caPort: https ? port + 1 : undefined }),
+          ),
+        );
         return;
       }
 

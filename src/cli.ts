@@ -14,6 +14,7 @@ if (major! < 22 || (major === 22 && minor! < 13)) {
 }
 
 import { writeFileSync, readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { db, dbPath, primerHome, all, one, run, tx } from './db/index.ts';
 import { loadCurriculum } from './curriculum/load.ts';
 import { createLearner, listLearners, resolveLearner, forgetLearner } from './record/learners.ts';
@@ -26,6 +27,7 @@ import { runTutor, recentRuns } from './agent/tutor.ts';
 import { decide, watch } from './agent/daemon.ts';
 import { settings, setSetting, budget } from './agent/config.ts';
 import { runClaudeCode, claudeBinary, isPackaged } from './agent/claude-code.ts';
+import { transportStatus } from './agent/acp.ts';
 import { fitParameters } from './domain/fit.ts';
 import { lanAddresses } from './surface/pwa.ts';
 import { installService, uninstallService, serviceStatus } from './agent/service.ts';
@@ -49,6 +51,29 @@ function has(name: string): boolean {
   return argv.includes(`--${name}`);
 }
 
+/** CLI flags win; otherwise remember what the parent app last asked for. */
+function surfaceFlags(): { lan: boolean; https: boolean } {
+  const conf = settings();
+  let lan = has('lan') || (!has('no-lan') && conf.surface_lan);
+  let https = has('https') || (!has('no-https') && conf.surface_https);
+  if (https) lan = true;
+  return { lan, https };
+}
+
+function openBrowser(url: string): void {
+  try {
+    if (process.platform === 'win32') {
+      spawn('cmd', ['/c', 'start', '', url], { detached: true, stdio: 'ignore' }).unref();
+    } else if (process.platform === 'darwin') {
+      spawn('open', [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    /* parent can open the URL themselves */
+  }
+}
+
 function positional(n: number): string | undefined {
   const rest = argv.slice(1).filter((a) => !a.startsWith('--'));
   // drop values consumed by flags
@@ -67,10 +92,11 @@ function out(value: unknown): void {
 
 const HELP = `primer — an open learner record
 
-  primer start                      set up if needed, run everything, print one URL
+  primer start                      open the parent app in your browser
                                     [--watch] [--lan] [--https] [--every 30] [--port 7333]
-                                    --lan lets a tablet on your wifi reach it
-                                    --https (with --lan) makes the mic work on that tablet
+                                    (or turn Wi‑Fi / HTTPS on from the app itself)
+
+  Everything else is optional power-user surface. The app is the product.
 
   primer init                       create the record and load the built-in curriculum
   primer learners                   list children in the record
@@ -259,7 +285,8 @@ async function main(): Promise<void> {
       }
 
       const port = Number(flag('port', '7333'));
-      const surface = await createSurfaceServer(port, { lan: has('lan'), https: has('https') });
+      const { lan, https } = surfaceFlags();
+      const surface = await createSurfaceServer(port, { lan, https });
       try {
         await surface.listen();
       } catch {
@@ -267,40 +294,31 @@ async function main(): Promise<void> {
         break;
       }
 
-      const children = listLearners();
-      out(`\nprimer is running at ${surface.origin}`);
-      if (has('lan')) {
-        const scheme = has('https') ? 'https' : 'http';
+      out(`\nprimer is open at ${surface.origin}`);
+      openBrowser(surface.origin);
+      out(`(opened in your browser — that window is the whole app)`);
+
+      const how = transportStatus();
+      out(`tutor transport: ${how.transport} — ${how.note}`);
+
+      if (lan) {
+        const scheme = https ? 'https' : 'http';
         for (const address of lanAddresses()) {
-          out(`  reachable on this wifi at ${scheme}://${address}:${port}`);
+          out(`  tablet: ${scheme}://${address}:${port}`);
         }
-        if (has('https') && surface.caPort) {
-          out(`  install the tablet certificate from http://<this-wifi-ip>:${surface.caPort}/ca.cer`);
-          out(`  (one-time trust step — after that the microphone works on the tablet)`);
+        if (https && surface.caPort) {
+          out(`  certificate: http://<wifi-ip>:${surface.caPort}/ca.cer`);
         }
-        out(`  (anything on your network can reach the record — fine at home)`);
-      }
-      if (!children.length) {
-        out(`\nNo children yet. In another terminal:`);
-        out(`  primer learner:add "Name"      add your child`);
-        out(`  primer demo                    or see it working with an example child first`);
-      } else {
-        const waiting = pendingReview().length;
-        out(
-          `\n${children.length} child${children.length === 1 ? '' : 'ren'}: ` +
-            children.map((c) => c.display_name).join(', '),
-        );
-        if (waiting) out(`${waiting} activit${waiting === 1 ? 'y' : 'ies'} waiting for you to review.`);
       }
 
-      const probe = await runClaudeCode({
-        prompt: 'Reply with the single word: ready',
-        systemPrompt: 'You are a health check. Reply with one word and nothing else.',
-        maxTurns: 1,
-        maxBudgetUsd: 0.05,
-        timeoutMs: 120_000,
-      });
-      out(probe.ok ? `\nClaude Code: ready.` : `\nClaude Code: ${probe.text}`);
+      const children = listLearners();
+      if (children.length) {
+        const waiting = pendingReview().length;
+        out(
+          `\n${children.length} child${children.length === 1 ? '' : 'ren'}` +
+            (waiting ? ` · ${waiting} waiting for review` : ''),
+        );
+      }
 
       if (has('watch')) {
         const every = Number(flag('every', '30'));
@@ -315,7 +333,7 @@ async function main(): Promise<void> {
           },
         });
       } else {
-        out(`\nAdd --watch to have it plan on its own. Ctrl-C to stop.`);
+        out(`\nLeave this running. Ctrl-C to stop.`);
       }
       await new Promise(() => {});
       break;

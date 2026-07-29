@@ -169,7 +169,11 @@ test('a name containing markup cannot run on the adult page', async () => {
   createLearner({ display_name: `<img src=x onerror="alert(1)">` });
   const html = await (await fetch(`${BASE}/`)).text();
   assert.ok(!html.includes('<img src=x onerror'), 'markup in a name must never be emitted raw');
-  assert.ok(html.includes('&lt;img'), 'it should appear escaped, as text');
+  // The parent app embeds state as JSON (\\u003c) and also HTML-escapes when rendering.
+  assert.ok(
+    html.includes('&lt;img') || html.includes('\\u003cimg') || html.includes('\u003cimg'),
+    'it should appear escaped, as text',
+  );
 });
 
 test("a child called O'Brien does not break the approve button", async () => {

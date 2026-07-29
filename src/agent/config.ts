@@ -12,6 +12,10 @@ export interface Settings {
   audio_capture: boolean;
   /** 0 keeps recordings forever. Anything else prunes on a schedule. */
   artifact_retention_days: number;
+  /** Remember Wi‑Fi sharing across restarts of the parent app. */
+  surface_lan: boolean;
+  /** Remember HTTPS (tablet mic) across restarts. */
+  surface_https: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -24,6 +28,8 @@ const DEFAULTS: Settings = {
   min_hours_between_runs: 4,
   audio_capture: false,
   artifact_retention_days: 0,
+  surface_lan: false,
+  surface_https: false,
 };
 
 export function settings(): Settings {
@@ -44,6 +50,8 @@ export function settings(): Settings {
     min_hours_between_runs: num('min_hours_between_runs', DEFAULTS.min_hours_between_runs),
     audio_capture: raw['audio_capture'] === 'true',
     artifact_retention_days: num('artifact_retention_days', DEFAULTS.artifact_retention_days),
+    surface_lan: raw['surface_lan'] === 'true',
+    surface_https: raw['surface_https'] === 'true',
   };
 }
 

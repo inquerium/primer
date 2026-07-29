@@ -75,4 +75,10 @@ export {
   AUTONOMOUS_TOOLS,
   type ClaudeCodeResult,
 } from './agent/claude-code.ts';
+export {
+  runTutorModel,
+  acpAgentBinary,
+  transportStatus,
+  type TutorTransport,
+} from './agent/acp.ts';
 export { AUTONOMOUS_PROMPT } from './agent/prompt.ts';
