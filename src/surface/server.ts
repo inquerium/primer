@@ -1,4 +1,6 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
+import type { Server } from 'node:net';
 import { extname, join } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { primerHome } from '../db/index.ts';
@@ -23,6 +25,7 @@ import {
   learnerBySlug,
   manifestFor,
   slugFor,
+  lanAddresses,
 } from './pwa.ts';
 import type { Learner } from '../domain/types.ts';
 import {
@@ -34,8 +37,10 @@ import {
   rateKey,
   childToken,
   SESSION_ID,
+  isLoopback,
 } from './security.ts';
 import { logEvent, one } from '../db/index.ts';
+import { ensureTlsMaterial, type TlsMaterial } from './certs.ts';
 
 const HTML = (csp: string) => ({
   'content-type': 'text/html; charset=utf-8',
@@ -133,21 +138,75 @@ export interface SurfaceOptions {
    * is not.
    */
   lan?: boolean;
+  /**
+   * Serve HTTPS with a locally-minted CA. Required for microphone capture and
+   * service workers on a tablet. The CA must be installed on each tablet once —
+   * see /ca.cer and the companion HTTP port.
+   */
+  https?: boolean;
 }
 
-export function createSurfaceServer(port = DEFAULT_PORT, opts: SurfaceOptions = {}) {
-  const host = opts.lan ? '0.0.0.0' : '127.0.0.1';
-  const origin = `http://127.0.0.1:${port}`;
+export interface SurfaceHandle {
+  server: Server;
+  port: number;
+  origin: string;
+  /** Plain-HTTP port that only serves the CA cert (set when https is on). */
+  caPort?: number;
+  https: boolean;
+  urlFor: (ifaceId: string, sessionId?: string) => string;
+  listen: () => Promise<void>;
+  close: () => Promise<void>;
+}
 
-  const server = createServer(async (req, res) => {
+export async function createSurfaceServer(
+  port = DEFAULT_PORT,
+  opts: SurfaceOptions = {},
+): Promise<SurfaceHandle> {
+  const host = opts.lan ? '0.0.0.0' : '127.0.0.1';
+  const https = Boolean(opts.https);
+  const scheme = https ? 'https' : 'http';
+  const origin = `${scheme}://127.0.0.1:${port}`;
+  // Pages (QR links, recording copy) read this so they match the live server.
+  if (https) process.env.PRIMER_TLS = '1';
+  else delete process.env.PRIMER_TLS;
+
+  let tls: TlsMaterial | null = null;
+  if (https) tls = await ensureTlsMaterial();
+
+  const handler = async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', origin);
     const path = url.pathname;
 
     try {
+      // CA download from the HTTPS server is loopback-only; tablets use the
+      // companion HTTP port below, which cannot serve anything else.
+      if (req.method === 'GET' && (path === '/ca.cer' || path === '/ca.pem') && tls) {
+        if (!isLoopback(req)) {
+          json(res, 404, { error: 'not available' });
+          return;
+        }
+        if (path === '/ca.pem') {
+          res.writeHead(200, {
+            'content-type': 'application/x-pem-file',
+            'content-disposition': 'attachment; filename="primer-local-ca.pem"',
+            'cache-control': 'no-store',
+          });
+          res.end(tls.caPem);
+          return;
+        }
+        res.writeHead(200, {
+          'content-type': 'application/pkix-cert',
+          'content-disposition': 'attachment; filename="primer-local-ca.cer"',
+          'cache-control': 'no-store',
+        });
+        res.end(tls.caDer);
+        return;
+      }
+
       // Everything is checked before anything is served: Host (so a rebound
       // hostname cannot read the record), cross-site writes, and — off this
       // machine — the child token and the child-only path list.
-      const decision = guard(req, url, { port, lan: Boolean(opts.lan) });
+      const decision = guard(req, url, { port, lan: Boolean(opts.lan), https });
       if (!decision.allow) {
         logEvent('surface', 'refused_request', path, {
           reason: decision.reason,
@@ -493,19 +552,69 @@ export function createSurfaceServer(port = DEFAULT_PORT, opts: SurfaceOptions = 
     } catch (err) {
       json(res, 500, { error: (err as Error).message });
     }
-  });
+  };
+
+  const server: Server = https && tls
+    ? createHttpsServer({ cert: tls.cert, key: tls.key, ca: tls.caPem }, handler)
+    : createHttpServer(handler);
+
+  // Plain HTTP companion that only serves the CA. A tablet cannot trust HTTPS
+  // until it has the CA, and it cannot fetch the CA over that same HTTPS without
+  // already trusting it — so this small port exists for one purpose.
+  const caPort = https ? port + 1 : undefined;
+  let caServer: Server | undefined;
 
   return {
     server,
     port,
     origin,
+    caPort,
+    https,
     urlFor: (ifaceId: string, sessionId?: string) =>
       `${origin}/i/${ifaceId}${sessionId ? `?session=${sessionId}` : ''}`,
     listen: () =>
       new Promise<void>((resolve, reject) => {
         server.once('error', reject);
-        server.listen(port, host, () => resolve());
+        server.listen(port, host, () => {
+          if (!https || !tls || caPort === undefined) {
+            resolve();
+            return;
+          }
+          const ca = tls;
+          caServer = createHttpServer((req, res) => {
+            const path = (req.url ?? '/').split('?')[0];
+            if (req.method === 'GET' && (path === '/ca.cer' || path === '/')) {
+              if (path === '/') {
+                const addresses = lanAddresses();
+                const tip = addresses[0] ? `http://${addresses[0]}:${caPort}/ca.cer` : `/ca.cer`;
+                res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+                res.end(`<!doctype html><meta charset=utf-8><title>Primer CA</title>
+<h1>Install this on the tablet</h1>
+<p>Download <a href="/ca.cer">primer-local-ca.cer</a>, then trust it in the tablet's
+certificate settings. After that, open the HTTPS activity link from the parent page.</p>
+<p class="muted">Direct link: <code>${tip}</code></p>`);
+                return;
+              }
+              res.writeHead(200, {
+                'content-type': 'application/pkix-cert',
+                'content-disposition': 'attachment; filename="primer-local-ca.cer"',
+                'cache-control': 'no-store',
+              });
+              res.end(ca.caDer);
+              return;
+            }
+            res.writeHead(404);
+            res.end('not found');
+          });
+          caServer.once('error', reject);
+          caServer.listen(caPort, host, () => resolve());
+        });
       }),
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    close: () =>
+      new Promise<void>((resolve) => {
+        const done = () => server.close(() => resolve());
+        if (caServer) caServer.close(() => done());
+        else done();
+      }),
   };
 }

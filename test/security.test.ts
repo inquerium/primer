@@ -17,7 +17,7 @@ const { childToken } = await import('../src/surface/security.ts');
 const { slugFor } = await import('../src/surface/pwa.ts');
 
 // Bound to loopback but told it may serve the network, so both paths are testable.
-const surface = createSurfaceServer(7771, { lan: true });
+const surface = await createSurfaceServer(7771, { lan: true });
 const PORT = 7771;
 const BASE = `http://127.0.0.1:${PORT}`;
 let learnerId = '';

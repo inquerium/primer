@@ -25,7 +25,7 @@ export async function startMcpServer(): Promise<void> {
     process.stderr.write(`primer: loaded ${loaded.skills} skills on first run\n`);
   }
 
-  const surface = createSurfaceServer();
+  const surface = await createSurfaceServer();
   try {
     await surface.listen();
   } catch (err) {

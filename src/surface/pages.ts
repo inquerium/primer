@@ -154,6 +154,9 @@ function childCard(child: Learner): string {
 function deviceSetup(child: Learner, slug: string): string {
   const addresses = lanAddresses();
   const port = Number(process.env.PRIMER_PORT ?? 7333);
+  const https = process.env.PRIMER_TLS === '1';
+  const scheme = https ? 'https' : 'http';
+  const caPort = port + 1;
 
   if (!addresses.length) {
     return `<div class="setup"><p><strong>To put this on a tablet</strong>, connect this
@@ -162,13 +165,29 @@ function deviceSetup(child: Learner, slug: string): string {
 
   // The key travels once, in the link the parent scans. The device keeps it; the
   // child never sees it and never types anything.
-  const url = `http://${addresses[0]}:${port}/k/${slug}?t=${childToken()}`;
+  const url = `${scheme}://${addresses[0]}:${port}/k/${slug}?t=${childToken()}`;
+  const caUrl = `http://${addresses[0]}:${caPort}/ca.cer`;
   let qr = '';
   try {
     qr = qrSvg(url, { size: 190 });
   } catch {
     qr = '';
   }
+
+  const tlsSteps = https
+    ? `<li>First, on the tablet, open <code style="word-break:break-all">${escapeHtml(caUrl)}</code>
+       and install the certificate. On iPad: Settings → Profile Downloaded → Install, then
+       Settings → General → About → Certificate Trust Settings → enable full trust for
+       “Primer Local”. On Android: Settings → Security → install a CA certificate.</li>`
+    : '';
+
+  const tlsNote = https
+    ? `<p class="muted" style="margin:.7rem 0 0">HTTPS is on, so the tablet can use the
+      microphone and work offline once the certificate above is trusted. Needs
+      <code>primer start --lan --https</code>.</p>`
+    : `<p class="muted" style="margin:.9rem 0 0">Needs <code>primer start --lan</code>.
+      Recording and offline caching need <code>--https</code> as well — without it the
+      tablet browser refuses the microphone.</p>`;
 
   return `<div class="setup">
   <div style="display:flex;gap:1.25rem;flex-wrap:wrap;align-items:flex-start">
@@ -177,6 +196,7 @@ function deviceSetup(child: Learner, slug: string): string {
       <strong>Put this on ${escapeHtml(child.display_name)}'s tablet</strong>
       <ol style="margin:.5rem 0 0;padding-left:1.2rem">
         <li>Put the tablet on the same wifi as this computer.</li>
+        ${tlsSteps}
         <li>${qr ? 'Point its camera at the code' : 'Open its browser'} — or type this in:<br>
             <code style="display:inline-block;margin-top:.25rem;word-break:break-all">${escapeHtml(url)}</code></li>
         <li>Tap <em>Share</em>, then <em>Add to Home Screen</em>.</li>
@@ -191,9 +211,9 @@ function deviceSetup(child: Learner, slug: string): string {
       ${escapeHtml(child.display_name)}'s name on it.</p>
     </div>
   </div>
-  <p class="muted" style="margin:.9rem 0 0">Needs <code>primer start --lan</code>. If the
-  code will not connect, your wifi may block devices from talking to each other — a
-  phone hotspot works instead.</p>
+  ${tlsNote}
+  <p class="muted" style="margin:.5rem 0 0">If the code will not connect, your wifi may
+  block devices from talking to each other — a phone hotspot works instead.</p>
 </div>`;
 }
 
@@ -374,7 +394,8 @@ function recordingsSection(learnerId: string, name: string): string {
 computer it works; on a tablet reached by its network address it does not, and the
 browser gives no warning — which is why nothing has appeared here.</p>
 <p class="muted">For now, recordings only work when the activity is opened on this
-computer. Making it work on the tablet needs HTTPS, which is not set up yet.</p></div>`
+computer — or start with <code>primer start --lan --https</code> and install the
+Primer Local certificate on the tablet (the parent page walks you through it).</p></div>`
       : '';
   if (cannotRecord) return cannotRecord;
 

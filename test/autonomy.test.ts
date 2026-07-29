@@ -22,7 +22,7 @@ const { decide } = await import('../src/agent/daemon.ts');
 const { runTutor } = await import('../src/agent/tutor.ts');
 const { exportRecord, importRecord } = await import('../src/record/report.ts');
 
-const surface = createSurfaceServer(7752);
+const surface = await createSurfaceServer(7752);
 let learnerId = '';
 
 before(async () => {

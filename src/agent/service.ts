@@ -24,6 +24,7 @@ export const TASK_NAME = 'Primer';
 export interface ServiceOptions {
   port?: number;
   lan?: boolean;
+  https?: boolean;
   everyMinutes?: number;
 }
 
@@ -34,6 +35,7 @@ function entryPoint(): string {
 function serviceArgs(opts: ServiceOptions): string[] {
   const args = ['start', '--watch'];
   if (opts.lan) args.push('--lan');
+  if (opts.https) args.push('--https');
   if (opts.port) args.push('--port', String(opts.port));
   if (opts.everyMinutes) args.push('--every', String(opts.everyMinutes));
   return args;

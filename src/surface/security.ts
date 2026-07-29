@@ -131,11 +131,20 @@ const CHILD_PATHS = [
 ];
 
 /** Paths that must never leave this machine, whatever token is presented. */
-const ADULT_ONLY = [/^\/$/, /^\/review/, /^\/progress\//, /^\/artifacts\//, /^\/how$/];
+const ADULT_ONLY = [
+  /^\/$/,
+  /^\/review/,
+  /^\/progress\//,
+  /^\/artifacts\//,
+  /^\/how$/,
+  /^\/ca\.(cer|pem)$/,
+];
 
 export interface GuardOptions {
   port: number;
   lan: boolean;
+  /** When true, Origin checks accept https:// as well as http://. */
+  https?: boolean;
 }
 
 export function guard(req: IncomingMessage, url: URL, opts: GuardOptions): AccessDecision {
@@ -158,11 +167,13 @@ export function guard(req: IncomingMessage, url: URL, opts: GuardOptions): Acces
     }
     const origin = req.headers.origin;
     if (typeof origin === 'string' && origin) {
-      const expected = new Set(
-        [`http://localhost:${opts.port}`, `http://127.0.0.1:${opts.port}`].concat(
-          lanAddresses().map((a) => `http://${a}:${opts.port}`),
-        ),
-      );
+      const schemes = opts.https ? (['https', 'http'] as const) : (['http'] as const);
+      const expected = new Set<string>();
+      for (const scheme of schemes) {
+        expected.add(`${scheme}://localhost:${opts.port}`);
+        expected.add(`${scheme}://127.0.0.1:${opts.port}`);
+        for (const a of lanAddresses()) expected.add(`${scheme}://${a}:${opts.port}`);
+      }
       if (!expected.has(origin)) {
         return { allow: false, status: 403, reason: `cross-origin ${req.method} from ${origin}` };
       }

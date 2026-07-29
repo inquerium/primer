@@ -16,7 +16,7 @@ const { createSurfaceServer } = await import('../src/surface/server.ts');
 const { setSetting, settings } = await import('../src/agent/config.ts');
 const artifacts = await import('../src/record/artifacts.ts');
 
-const surface = createSurfaceServer(7761);
+const surface = await createSurfaceServer(7761);
 let learnerId = '';
 
 // A tiny but structurally valid WebM header, enough to prove bytes round-trip.

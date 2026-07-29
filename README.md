@@ -356,18 +356,19 @@ const stop = await primer.listen({ prompt: 'Read this page out loud.', skill: 'f
 await stop();
 ```
 
-**It only works on the computer running primer, not on a tablet.** Browsers hand out
-the microphone only in a "secure context" — HTTPS, or localhost. A tablet reaching
-primer at `http://192.168.x.x` is neither, so `navigator.mediaDevices` does not
-exist and every recording call quietly does nothing. Primer detects this and says so
+**It only works on the computer running primer — or on a tablet after one trust step.**
+Browsers hand out the microphone only in a "secure context" — HTTPS, or localhost. A
+tablet reaching primer at `http://192.168.x.x` is neither. Start with
+`primer start --lan --https`: primer mints a private CA, serves activities over HTTPS,
+and opens a second plain-HTTP port that only offers the CA certificate. Install that
+certificate on the tablet once (the parent page walks through iPad and Android), then
+scan the HTTPS QR. Without `--https`, primer detects the missing microphone and says so
 on the progress page rather than letting a parent wonder why the setting did nothing.
-Making it work on a tablet needs HTTPS with a locally-trusted certificate, which is
-not built yet.
 
-The same limit removes the service worker, so **the offline cache does not work on a
-tablet either.** What does work everywhere is the evidence queue: answers are held in
-the device's own storage and retried, so a dropped connection mid-activity no longer
-loses what a child just did.
+The same limit removes the service worker until HTTPS is trusted, so **the offline cache
+needs `--https` on a tablet too.** What does work everywhere is the evidence queue:
+answers are held in the device's own storage and retried, so a dropped connection
+mid-activity no longer loses what a child just did.
 
 **Off by default.** Recording a child is never something software should assume:
 
@@ -504,20 +505,20 @@ the parent to try a low-tech check instead. None of that is prompted behavior; i
 of giving a model the whole child.
 
 That session also surfaced the foundation-erosion bug described above, which no test had
-caught. 141 tests now cover the model, scheduler, queue, review gate, budget, migrations,
+caught. Tests now cover the model, scheduler, queue, review gate, budget, migrations,
 audio capture, parameter fitting, the import round-trip, the security boundary, the
-activity validator, the icon encoder, and the auto-start descriptors.
+activity validator, the icon encoder, the auto-start descriptors, packaging, and
+HTTPS with a locally-minted CA.
 
-**What is still missing.** Recording and offline caching do not work on a tablet, because
-browsers withhold the microphone and service workers outside a secure context; fixing it
-means HTTPS with a locally-trusted certificate, which is designed but not built. The
-installers are written and tested, but they point at a repository with no published
-release, so until the first tag lands the curl and irm one-liners 404 and building from
-source is the working path. The curriculum stops at grade 3 and is English-only — a
+**What is still missing.** The curriculum stops at grade 3 and is English-only — a
 content job, not an engineering one, and the most useful thing an outsider could
 contribute. Nothing transcribes the audio, so a human has to listen. The parameter
 fitting has never run on a real sample, because no such sample
 exists. And every claim here rests on one child over one week; the honest sample size is one.
+
+Tablet recording needs a one-time certificate install on each device
+(`primer start --lan --https`); that is built, but it is still a multi-step trust flow
+on iOS and Android, not silent.
 
 The obvious next things after that: fitting BKT parameters per skill from real data, and
 curriculum packs beyond grade 3 and beyond English.

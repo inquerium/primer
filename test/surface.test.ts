@@ -14,7 +14,7 @@ const { createLearner } = await import('../src/record/learners.ts');
 const { saveInterface } = await import('../src/surface/store.ts');
 const { createSurfaceServer } = await import('../src/surface/server.ts');
 
-const surface = createSurfaceServer(7739);
+const surface = await createSurfaceServer(7739);
 let learnerId = '';
 let interfaceId = '';
 

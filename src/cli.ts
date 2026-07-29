@@ -68,8 +68,9 @@ function out(value: unknown): void {
 const HELP = `primer — an open learner record
 
   primer start                      set up if needed, run everything, print one URL
-                                    [--watch] [--lan] [--every 30] [--port 7333]
+                                    [--watch] [--lan] [--https] [--every 30] [--port 7333]
                                     --lan lets a tablet on your wifi reach it
+                                    --https (with --lan) makes the mic work on that tablet
 
   primer init                       create the record and load the built-in curriculum
   primer learners                   list children in the record
@@ -87,7 +88,7 @@ const HELP = `primer — an open learner record
   primer where                      show where the record lives
 
 Autonomous tutor — runs through your Claude Code login, no API key:
-  primer autostart [on|off|status]  start automatically when you log in  [--lan]
+  primer autostart [on|off|status]  start automatically when you log in  [--lan] [--https]
   primer doctor                     check Claude Code is installed and signed in
   primer tutor <learner>            run one planning cycle now  [--dry-run] [--max-usd 0.50]
   primer watch                      run the tutor on a loop  [--every 30] [--port 7333]
@@ -194,7 +195,10 @@ async function main(): Promise<void> {
     }
 
     case 'serve': {
-      const surface = createSurfaceServer(Number(flag('port', '7333')));
+      const surface = await createSurfaceServer(Number(flag('port', '7333')), {
+        lan: has('lan'),
+        https: has('https'),
+      });
       await surface.listen();
       out(`primer surface on ${surface.origin}  (record: ${dbPath()})`);
       break;
@@ -222,7 +226,7 @@ async function main(): Promise<void> {
       const port = Number(flag('port', '7333'));
       // Hold the port so generated URLs point at a surface that stays up after
       // the run; the spawned MCP server reuses it rather than binding its own.
-      const surface = createSurfaceServer(port, { lan: has('lan') });
+      const surface = await createSurfaceServer(port, { lan: has('lan'), https: has('https') });
       await surface.listen().catch(() => {});
       const result = await runTutor(learner.id, {
         trigger: 'manual',
@@ -255,7 +259,7 @@ async function main(): Promise<void> {
       }
 
       const port = Number(flag('port', '7333'));
-      const surface = createSurfaceServer(port, { lan: has('lan') });
+      const surface = await createSurfaceServer(port, { lan: has('lan'), https: has('https') });
       try {
         await surface.listen();
       } catch {
@@ -266,8 +270,13 @@ async function main(): Promise<void> {
       const children = listLearners();
       out(`\nprimer is running at ${surface.origin}`);
       if (has('lan')) {
+        const scheme = has('https') ? 'https' : 'http';
         for (const address of lanAddresses()) {
-          out(`  reachable on this wifi at http://${address}:${port}`);
+          out(`  reachable on this wifi at ${scheme}://${address}:${port}`);
+        }
+        if (has('https') && surface.caPort) {
+          out(`  install the tablet certificate from http://<this-wifi-ip>:${surface.caPort}/ca.cer`);
+          out(`  (one-time trust step — after that the microphone works on the tablet)`);
         }
         out(`  (anything on your network can reach the record — fine at home)`);
       }
@@ -326,6 +335,7 @@ async function main(): Promise<void> {
       const result = installService({
         port: Number(flag('port', '7333')),
         lan: has('lan'),
+        https: has('https'),
         everyMinutes: Number(flag('every', '30')),
       });
       for (const line of result.messages) out(line);
@@ -371,7 +381,10 @@ async function main(): Promise<void> {
     }
 
     case 'watch': {
-      const surface = createSurfaceServer(Number(flag('port', '7333')));
+      const surface = await createSurfaceServer(Number(flag('port', '7333')), {
+        lan: has('lan'),
+        https: has('https'),
+      });
       await surface.listen();
       const every = Number(flag('every', '30'));
       out(`primer watching. surface ${surface.origin} · checking every ${every} min · record ${dbPath()}`);
