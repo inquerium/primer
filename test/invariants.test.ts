@@ -17,9 +17,10 @@
  */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const home = mkdtempSync(join(tmpdir(), 'primer-invariants-'));
 process.env.PRIMER_HOME = home;
@@ -197,6 +198,75 @@ test('an activity that phones home or reports nothing is refused before it can b
     '<!doctype html><html><body><script>document.body.textContent = "fun";</script></body></html>',
   );
   assert.equal(silent.ok, false, 'an activity that reports nothing teaches the record nothing');
+});
+
+/**
+ * The World boundaries (docs/WORLD.md). The Record knows the child, The World
+ * knows the field, and the two must never mix: nothing in The World may know
+ * any child, and nothing in the pipeline that maintains The World may reach a
+ * family's record. These hold in both directions or the doctrine is decoration.
+ */
+const REPO = join(fileURLToPath(import.meta.url), '..', '..');
+
+function filesUnder(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...filesUnder(full));
+    else out.push(full);
+  }
+  return out;
+}
+
+test('no World data structure contains a learner id', () => {
+  // The World proposes for every child and targets none. A learner id inside
+  // world/ would mean shipped, public, versioned data knows a specific child,
+  // which is the one thing this architecture exists to make impossible.
+  const files = filesUnder(join(REPO, 'world'));
+  assert.ok(files.length > 0, 'world/ exists and ships content');
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8');
+    for (const pattern of [/\blrn_[a-z0-9]+/i, /\blearner_id\b/]) {
+      assert.ok(
+        !pattern.test(text),
+        `${relative(REPO, file)} matches ${pattern}; The World must not know any child`,
+      );
+    }
+  }
+});
+
+test('no pipeline code path can read a family record', () => {
+  // The maintainer-side pipeline (the validator, the watchers, the worktree
+  // hooks) operates on this repository and synthetic fixtures only. It has no
+  // business anywhere near a record: not the database module, not the record
+  // module, not the env vars that locate a family's file. A match here means
+  // a convenience import crossed the one boundary that must not blur.
+  const pipeline = [
+    join(REPO, 'scripts', 'validate-world.mjs'),
+    ...filesUnder(join(REPO, 'automation')),
+    ...filesUnder(join(REPO, '.openclaw')),
+  ];
+  assert.ok(pipeline.length >= 2, 'the pipeline surface exists');
+
+  const forbidden = [
+    'node:sqlite', //  the record's storage engine
+    'DatabaseSync', // the record's storage engine, unaliased
+    'src/db', //       the record's database module
+    'src/record', //   the record's domain module
+    'PRIMER_DB', //    the env var that locates a family's record
+    'PRIMER_HOME', //  the env var that locates everything private
+    'record.db', //    the file itself
+  ];
+  for (const file of pipeline) {
+    const text = readFileSync(file, 'utf8');
+    for (const needle of forbidden) {
+      assert.ok(
+        !text.includes(needle),
+        `${relative(REPO, file)} mentions "${needle}"; pipeline code must be unable to reach a family record`,
+      );
+    }
+  }
 });
 
 test('both prompts carry the engagement-mechanics ban and the limits of the loop', () => {
