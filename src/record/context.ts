@@ -7,6 +7,12 @@ import type {
   Target,
 } from '../domain/types.ts';
 import { nextTargets } from '../domain/scheduler.ts';
+import {
+  bandLabel,
+  expectedBands,
+  placementStatus,
+  type PlacementStatus,
+} from '../domain/placement.ts';
 import { accommodations, ageYears, interests, resolveLearner } from './learners.ts';
 
 export interface ContextOptions {
@@ -93,11 +99,17 @@ export function learnerContext(ref: string, opts: ContextOptions = {}) {
 
   const topInterests = interests(lid, at).slice(0, 8);
 
+  const age = ageYears(learner, at);
+  const placement = placementStatus(lid, at);
+
   return {
     learner: {
       id: learner.id,
       name: learner.display_name,
-      age_years: ageYears(learner, at),
+      age_years: age,
+      /** Where children this age typically work. A starting guess for the tutor,
+       *  never a comparison to put in front of anyone. */
+      expected_bands: age == null ? null : expectedBands(age),
       pronouns: learner.pronouns,
       locale: learner.locale,
     },
@@ -131,12 +143,15 @@ export function learnerContext(ref: string, opts: ContextOptions = {}) {
       recent: recentInterfaces.map(describeInterface),
     },
     notes,
+    /** Non-null only while a cold start is being placed. See src/domain/placement.ts. */
+    placement,
     guidance: guidance(
       targets,
       misconceptions,
       affectRecent,
       topInterests.map((i) => i.topic),
       subjectPronoun(learner.pronouns),
+      placement,
     ),
   };
 }
@@ -190,8 +205,26 @@ function guidance(
   affect: Array<{ signal: string; n: number; avg: number }>,
   topics: string[],
   pronoun: { subject: string; verb: string },
+  placement: PlacementStatus | null,
 ): string[] {
   const out: string[] = [];
+
+  const placing = placement
+    ? (Object.entries(placement.domains) as Array<[string, { status: string }]>)
+        .filter(([, d]) => d.status === 'in_progress')
+        .map(([domain]) => domain)
+    : [];
+  if (placement && placing.length) {
+    const bands = placement.expected.bands.map(bandLabel).join(' or ');
+    out.push(
+      `Little is on record for ${placing.join(', ')} yet. At this age children are typically ` +
+        `working around ${bands} material — a starting guess, not a verdict. Before teaching ` +
+        `anything new, run one short assess-mode session: one playful activity probing the ` +
+        `skills listed under placement, 2–3 quick items each, recorded with kind 'probe', ` +
+        `mixed across strands, no teaching. End early and warmly if it is hard. The record ` +
+        `will find the real starting line either way.`,
+    );
+  }
 
   const stuck = targets.filter((t) => t.reason === 'stuck');
   if (stuck.length) {

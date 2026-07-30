@@ -18,8 +18,9 @@ export function progressReport(learnerId: string, sinceDays = 30) {
   // Status is worked out here, not read from the column. A row written the day a
   // child mastered something still says "mastered" a year later, and that stale
   // word is exactly what would be printed on a parent's page.
-  const rows = all<Mastery & { name: string; domain: string }>(
-    `SELECT m.*, s.name, s.domain FROM mastery m JOIN skill s ON s.id = m.skill_id
+  const rows = all<Mastery & { name: string; domain: string; strand: string; grade_band: string | null }>(
+    `SELECT m.*, s.name, s.domain, s.strand, s.grade_band
+       FROM mastery m JOIN skill s ON s.id = m.skill_id
       WHERE m.learner_id = ?`,
     learnerId,
   );
@@ -54,6 +55,32 @@ export function progressReport(learnerId: string, sinceDays = 30) {
       p_known: m.p_known,
       opportunities: m.opportunities,
     }));
+
+  // Where the current work sits, per domain — descriptive only. This says what
+  // band the in-flight skills happen to live in; it deliberately does not say
+  // what band anyone thinks the child *should* be in. That comparison is not
+  // this record's to make, and putting it on a parent's page would turn a
+  // description into a ranking.
+  const BAND_ORDER = ['pk', 'k', '1', '2', '3'];
+  const currentFocus = domains
+    .map((d) => {
+      const inFlight = live.filter((m) => m.domain === d.domain && m.live_status === 'learning');
+      if (!inFlight.length) return null;
+      const counts = new Map<string, number>();
+      for (const m of inFlight) {
+        if (m.grade_band) counts.set(m.grade_band, (counts.get(m.grade_band) ?? 0) + 1);
+      }
+      const band = [...counts.entries()].sort(
+        (a, b) => b[1] - a[1] || BAND_ORDER.indexOf(b[0]) - BAND_ORDER.indexOf(a[0]),
+      )[0]?.[0];
+      if (!band) return null;
+      return {
+        domain: d.domain,
+        band,
+        strand_names: [...new Set(inFlight.map((m) => m.strand))].slice(0, 4),
+      };
+    })
+    .filter((f): f is { domain: string; band: string; strand_names: string[] } => f !== null);
 
   // Things a child once had and has since lost — the cheapest wins available, and
   // the thing a parent most wants to be told about before a teacher notices.
@@ -128,6 +155,7 @@ export function progressReport(learnerId: string, sinceDays = 30) {
       minutes: totals?.minutes ? Math.round(totals.minutes) : 0,
     },
     by_domain: byDomain,
+    current_focus: currentFocus,
     newly_mastered: newlyMastered,
     working_on: working,
     slipped_since_last_practice: slipped,

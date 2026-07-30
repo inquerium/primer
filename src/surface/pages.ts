@@ -3,6 +3,7 @@ import type { Learner } from '../domain/types.ts';
 import { listLearners, interests, accommodations, ageYears } from '../record/learners.ts';
 import { pendingReview, queue, readyCount, type PlannedActivity } from '../record/queue.ts';
 import { progressReport } from '../record/report.ts';
+import { bandLabel } from '../domain/placement.ts';
 import { listArtifacts, describeArtifact } from '../record/artifacts.ts';
 import { settings, deviceCapabilities } from '../agent/config.ts';
 import { slugFor, colorFor, lanAddresses } from './pwa.ts';
@@ -315,6 +316,14 @@ export function progressPage(learnerId: string): string {
         .join('')}</ul>`
     : '<p class="empty">Nothing in progress.</p>';
 
+  // Where the work sits, never where it "should" sit. The record describes;
+  // it does not rank.
+  const focusLine = report.current_focus.length
+    ? `<p class="muted">${report.current_focus
+        .map((f) => `${escapeHtml(f.domain[0]!.toUpperCase() + f.domain.slice(1))}: ${bandLabel(f.band)} material`)
+        .join(' · ')}</p>`
+    : '';
+
   const stuck = report.needs_a_different_approach.length
     ? `<ul class="plain">${report.needs_a_different_approach
         .map(
@@ -363,7 +372,7 @@ ${
 }
 
 <div class="card"><h2>Finished recently</h2>${mastered}</div>
-<div class="card"><h2>Working on now</h2>${working}</div>
+<div class="card"><h2>Working on now</h2>${focusLine}${working}</div>
 ${stuck ? `<div class="card"><h2>Not clicking yet</h2>${stuck}<p class="muted">The tutor will try a different angle rather than repeating these.</p></div>` : ''}
 <div class="card"><h2>Mix-ups being worked on</h2>${openMisconceptions}</div>
 

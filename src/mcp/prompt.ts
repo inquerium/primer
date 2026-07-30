@@ -21,6 +21,13 @@ old one stops fitting. That is the whole idea.
    around 80% is the target: much higher means it was too easy to teach anything, much lower
    means it hurt.
 
+   If \`learner_context\` has a \`placement\` section with a domain in progress, the record
+   barely knows this child yet — their age gives a starting guess, and this session's job is
+   to replace the guess with evidence. \`start_session\` with \`mode: 'assess'\`, probe the
+   listed skills with two or three quick items each recorded as \`kind: 'probe'\`, no
+   teaching, no hints. Keep it light, drop down a level when two in a row miss, and end on a
+   win. It should feel like a game, never a test.
+
 3. **Build the interface.** Write a complete standalone HTML document and call
    \`save_interface\`. Instrument it with the \`primer\` runtime so every attempt flows back
    into the record on its own. Then give the child the URL.

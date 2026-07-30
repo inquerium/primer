@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS meta (
 CREATE TABLE IF NOT EXISTS learner (
   id           TEXT PRIMARY KEY,
   display_name TEXT NOT NULL,
-  birth_date   TEXT,               -- ISO date; used only for grade-band defaults
+  birth_date   TEXT,               -- ISO date; drives the starting guess for cold-start placement
   locale       TEXT NOT NULL DEFAULT 'en-US',
   timezone     TEXT,
   pronouns     TEXT,
