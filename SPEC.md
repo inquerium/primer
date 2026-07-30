@@ -25,7 +25,9 @@ company that made the tutor disappears, the record must still open.
    ask "why does it think she can't do vowel teams" and get a list of exact attempts.
 
 5. **Exportable in full.** `primer export` writes the entire record as JSON. No lock-in is
-   the whole point.
+   the whole point. The file it writes is a documented interchange format, not a private
+   dump — [FORMAT.md](FORMAT.md) is the contract, versioned so that other implementations
+   can read and write it.
 
 6. **Boring, small schema.** Twenty tables. If it can't be expressed here, propose an
    extension rather than a private column.

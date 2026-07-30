@@ -484,7 +484,11 @@ The design constraints that matter for something a family would use for a decade
   import every row gets a fresh id and all references are rewritten, so importing the
   same file twice makes two children rather than silently merging them, and the HTML
   travels with it, inlined. Audio does not: artifact rows are exported, but the recording
-  files themselves stay on the machine that made them.
+  files themselves stay on the machine that made them. The curriculum travels too: a
+  record that lands on an install missing its skill packs fills the gaps from the file
+  instead of orphaning the child's history. The format is documented and versioned in
+  [FORMAT.md](FORMAT.md) so that nothing — including this project — is the only thing
+  able to read a child's record.
 - **Mastery is a cache.** `recompute_mastery` replays the whole evidence history through
   the current model. When the model improves, the past improves with it.
 - **Every write has an actor.** Including the settings that govern the autonomous loop.

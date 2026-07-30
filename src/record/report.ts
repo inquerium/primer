@@ -190,6 +190,10 @@ export function exportRecord(learnerId: string) {
   ];
   const out: Record<string, unknown> = {
     format: 'open-learner-record',
+    // The envelope's own version, independent of the SQLite schema version.
+    // Bumped when the shape of this file changes in a way an importer must know
+    // about. FORMAT.md is the contract; this number is how an importer checks it.
+    format_version: 1,
     schema_version: one<{ value: string }>(`SELECT value FROM meta WHERE key = 'schema_version'`)?.value,
     exported_at: new Date().toISOString(),
   };
@@ -304,6 +308,8 @@ export function importRecord(data: Record<string, any>): {
   }
 
   tx(() => {
+    fillCurriculumFromEnvelope(data, knownSkills, rows, warnings);
+
     run(
       `INSERT INTO learner (id, display_name, birth_date, locale, timezone, pronouns, created_at, archived_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -388,6 +394,109 @@ export function importRecord(data: Record<string, any>): {
   });
 
   return { learner_id: newId, name: source.display_name, rows, warnings };
+}
+
+/**
+ * A record must not lose its meaning in transit.
+ *
+ * The export carries the whole curriculum precisely because `mastery.skill_id`
+ * is NOT NULL and `observation.skill_id` is a real foreign key: land this file
+ * on an install that never loaded the same packs and, without this, every
+ * mastery row on those skills is dropped and every observation loses its link —
+ * a child's history on a skill her old install taught quietly evaporates.
+ * Filling the gaps from the envelope is what makes the record portable rather
+ * than portable-if-you-happen-to-have-the-same-packs.
+ *
+ * Two deliberate limits:
+ *
+ * - **The local curriculum always wins.** Only skills this install has never
+ *   heard of are inserted. An import must never re-parameterize, rename, or
+ *   re-band a skill the local packs define — a record is evidence about one
+ *   child, not an authority on the curriculum.
+ * - **Edges are only added where at least one endpoint is newly filled.** The
+ *   envelope's edge list describes the exporting install's graph; letting it
+ *   add edges between two skills this install already has would silently
+ *   rewire the local prerequisite graph — including re-adding an edge a local
+ *   pack author deliberately removed.
+ *
+ * Everything is validated before insertion: an import file is an untrusted
+ * document, and skill ids flow into DOM ids, SQL identifiers elsewhere, and
+ * error messages. An id that fails the pattern is skipped with a warning, and
+ * every row that referenced it then takes the existing unknown-skill path.
+ */
+const SKILL_ID = /^[a-z][a-z0-9_]{1,63}$/;
+const SHORT_TOKEN = /^[a-z][a-z0-9_]{0,31}$/;
+const EDGE_KINDS = new Set(['prerequisite', 'component', 'extends']);
+const clamp01 = (v: unknown, fallback: number): number => {
+  const n = typeof v === 'number' ? v : Number.NaN;
+  return Number.isFinite(n) && n > 0 && n < 1 ? n : fallback;
+};
+
+function fillCurriculumFromEnvelope(
+  data: Record<string, any>,
+  knownSkills: Set<string>,
+  rows: Record<string, number>,
+  warnings: string[],
+): void {
+  const incoming: Record<string, unknown>[] = Array.isArray(data['curriculum'])
+    ? data['curriculum']
+    : [];
+  const filled = new Set<string>();
+
+  for (const s of incoming) {
+    const skillId = typeof s['id'] === 'string' ? s['id'] : '';
+    if (knownSkills.has(skillId)) continue; // local curriculum wins, always
+    if (!SKILL_ID.test(skillId)) {
+      if (skillId) warnings.push(`curriculum: skill id "${skillId.slice(0, 40)}" fails validation — skipped`);
+      continue;
+    }
+    const domain = typeof s['domain'] === 'string' && SHORT_TOKEN.test(s['domain']) ? s['domain'] : null;
+    const strand = typeof s['strand'] === 'string' && SHORT_TOKEN.test(s['strand']) ? s['strand'] : null;
+    const name = typeof s['name'] === 'string' && s['name'].trim() ? s['name'].slice(0, 200) : null;
+    if (!domain || !strand || !name) {
+      warnings.push(`curriculum: skill "${skillId}" is missing a valid domain, strand, or name — skipped`);
+      continue;
+    }
+    run(
+      `INSERT INTO skill (id, domain, strand, name, description, grade_band, ordinal, probe, tags,
+                          p_init, p_learn, p_guess, p_slip)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      skillId,
+      domain,
+      strand,
+      name,
+      typeof s['description'] === 'string' ? s['description'].slice(0, 1000) : null,
+      typeof s['grade_band'] === 'string' && /^[a-z0-9]{1,4}$/.test(s['grade_band']) ? s['grade_band'] : null,
+      Number.isFinite(Number(s['ordinal'])) ? Math.trunc(Number(s['ordinal'])) : 0,
+      // The export parses `probe` into an object so the file is readable; the
+      // column stores JSON text.
+      s['probe'] == null ? null : JSON.stringify(s['probe']),
+      typeof s['tags'] === 'string' ? s['tags'] : Array.isArray(s['tags']) ? JSON.stringify(s['tags']) : null,
+      clamp01(s['p_init'], 0.15),
+      clamp01(s['p_learn'], 0.2),
+      clamp01(s['p_guess'], 0.2),
+      clamp01(s['p_slip'], 0.1),
+    );
+    knownSkills.add(skillId);
+    filled.add(skillId);
+  }
+
+  let edges = 0;
+  const incomingEdges: Record<string, unknown>[] = Array.isArray(data['skill_edges'])
+    ? data['skill_edges']
+    : [];
+  for (const e of incomingEdges) {
+    const from = typeof e['from_skill'] === 'string' ? e['from_skill'] : '';
+    const to = typeof e['to_skill'] === 'string' ? e['to_skill'] : '';
+    const kind = typeof e['kind'] === 'string' ? e['kind'] : 'prerequisite';
+    if (!filled.has(from) && !filled.has(to)) continue; // never rewire the local graph
+    if (!knownSkills.has(from) || !knownSkills.has(to) || !EDGE_KINDS.has(kind)) continue;
+    run(`INSERT OR IGNORE INTO skill_edge (from_skill, to_skill, kind) VALUES (?, ?, ?)`, from, to, kind);
+    edges += 1;
+  }
+
+  if (filled.size) rows['skills_filled'] = filled.size;
+  if (edges) rows['skill_edges_filled'] = edges;
 }
 
 /**
