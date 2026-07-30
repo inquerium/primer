@@ -1,7 +1,7 @@
 {
   "name": "primer-brain",
-  "version": "0.1.0",
-  "description": "An open learner record + MCP server. The memory layer for AI tutoring. No fixed interface â€” the tutor builds one per child, per moment.",
+  "version": "0.1.2",
+  "description": "An open learner record + MCP server. The memory layer for AI tutoring. No fixed interface — the tutor builds one per child, per moment.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
