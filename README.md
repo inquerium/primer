@@ -456,9 +456,9 @@ remove. Without `--yes` it only says what it would do.
 ## Development
 
 ```bash
-npm test                      # 141 tests: model, record, surface, MCP protocol, security,
+npm test                      # 161 tests: model, record, surface, MCP protocol, security,
                               # packaging, deletion, activity validator, service descriptors,
-                              # icons, QR
+                              # icons, QR, ACP permission boundary, LAN HTTPS
 npm run dev -- targets Ada    # run from source, no build step (Node 22+ strips types)
 npm run mcp                   # MCP server from source
 ```

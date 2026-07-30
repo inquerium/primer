@@ -49,7 +49,7 @@ comments in this codebase exist because a claim was false and the failure was si
 
 ```bash
 npm install
-npm test                    # 141 tests, no network, no API key needed
+npm test                    # 161 tests, no network, no API key needed
 npx tsc --noEmit
 npm run dev -- targets Ada  # run from source, no build step
 npm run package             # build/primer(.exe) — what a user actually installs
