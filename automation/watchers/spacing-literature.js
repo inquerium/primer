@@ -42,7 +42,7 @@ const QUERY = 'spacing distributed practice retrieval retention';
 // TODO(operator): set a real contact address before registering this watcher.
 // Crossref reserves a faster pool for callers who identify themselves, and a
 // working address is how they reach you before they rate-limit you.
-const MAILTO = 'TODO@example.org';
+const MAILTO = 'tonystark@tamu.edu';
 
 // Measured across the journals above on 2026-07-30: 33 works in 12 months,
 // about 0.6 per week, with 0 in the trailing 14 days. At this rate a threshold
@@ -121,7 +121,11 @@ if (failure) {
         '\n\nRead these, then follow the proposer protocol in docs/OPENCLAW.md. ' +
         `Target: world/claims/${CLAIM_FAMILY}.md and any file in world/priors/ ` +
         'carrying depends_on_claims for this family. Resolve every DOI before ' +
-        'citing it. A TODO source is honest; an invented DOI is a firing offense.',
+        'citing it. A TODO source is honest; an invented DOI is a firing offense. ' +
+        'The ISSN filter is a venue filter, not a topic filter, so some of these ' +
+        'will be off topic. If none of them warrants a change, reply saying so in ' +
+        'one sentence and open no PR. An empty week is a normal outcome; a PR ' +
+        'manufactured to look productive is not.',
       state: { dois, checkedAt: Date.now() },
     });
   }
