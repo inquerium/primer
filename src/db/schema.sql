@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS skill (
   strand      TEXT NOT NULL,
   name        TEXT NOT NULL,
   description TEXT,
-  grade_band  TEXT,                -- pk | k | 1 | 2
+  grade_band  TEXT,                -- pk | k | 1 | 2 | 3
   ordinal     INTEGER NOT NULL DEFAULT 0,
   probe       TEXT,                -- JSON: how to generate an item for this skill
   tags        TEXT,                -- JSON array
