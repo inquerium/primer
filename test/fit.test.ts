@@ -12,7 +12,7 @@ const { db, closeDb, one } = await import('../src/db/index.ts');
 const { loadCurriculum } = await import('../src/curriculum/load.ts');
 const { createLearner } = await import('../src/record/learners.ts');
 const { recordObservations } = await import('../src/record/observations.ts');
-const { fitParameters } = await import('../src/domain/fit.ts');
+const { fitParameters, exportContribution } = await import('../src/domain/fit.ts');
 
 before(() => {
   db();
@@ -106,4 +106,42 @@ test('nothing is written until --apply is asked for', () => {
   assert.notEqual(after.p_guess, before);
   assert.ok(after.p_guess > 0 && after.p_guess < 1);
   assert.ok(after.p_slip > 0 && after.p_slip < 1);
+});
+
+test('an exported contribution is just counts, for every skill this install touched', () => {
+  const contribution = exportContribution();
+  assert.equal(contribution.contribution_format, 1);
+
+  // This install has already generated evidence on both skills used above.
+  const rhyme = contribution.skills.find((s) => s.skill_id === 'pa_rhyme_recognize');
+  const count = contribution.skills.find((s) => s.skill_id === 'cc_count_to_10');
+  assert.ok(rhyme, 'a skill this install has evidence for must be included');
+  assert.ok(count, 'a skill with only eight attempts must still be included — the whole point is that a small install can still contribute to a shared threshold');
+
+  // 40 simulated children x 14 attempts each = 560 first-side observations.
+  assert.equal(rhyme!.first_attempts, 40);
+  assert.ok(rhyme!.first_correct >= 0 && rhyme!.first_correct <= rhyme!.first_attempts);
+  assert.ok(rhyme!.post_mastery_wrong <= rhyme!.post_mastery);
+  assert.equal(count!.first_attempts, 1, 'first_attempts counts (learner, skill) pairs, not raw rows');
+
+  // Nothing here should ever carry anything besides the six counts and the id.
+  for (const s of contribution.skills) {
+    assert.deepEqual(
+      Object.keys(s).sort(),
+      [
+        'first_attempts',
+        'first_correct',
+        'learning_windows',
+        'opportunities_before_first_correct',
+        'post_mastery',
+        'post_mastery_wrong',
+        'skill_id',
+      ],
+      'a contribution row must carry nothing but skill_id and the six counts — no learner id, no item, no timestamp',
+    );
+  }
+
+  // A skill nobody has ever attempted must not appear at all.
+  const untouched = contribution.skills.find((s) => s.skill_id === 'pc_book_orientation');
+  assert.equal(untouched, undefined, 'a skill with zero attempts contributes nothing and should not be listed');
 });

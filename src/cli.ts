@@ -28,7 +28,7 @@ import { decide, watch } from './agent/daemon.ts';
 import { settings, setSetting, budget } from './agent/config.ts';
 import { runClaudeCode, claudeBinary, isPackaged } from './agent/claude-code.ts';
 import { transportStatus } from './agent/acp.ts';
-import { fitParameters } from './domain/fit.ts';
+import { fitParameters, exportContribution } from './domain/fit.ts';
 import { lanAddresses } from './surface/pwa.ts';
 import { installService, uninstallService, serviceStatus } from './agent/service.ts';
 import { pruneArtifacts, listArtifacts, describeArtifact } from './record/artifacts.ts';
@@ -125,6 +125,7 @@ Autonomous tutor — runs through your Claude Code login, no API key:
   primer budget                     spend today and this month
   primer config [key] [value]       show or change settings
   primer fit                        fit skill parameters to real evidence  [--apply]
+  primer fit --export-contribution  write this install's counts, for sharing  [--out]
   primer recordings <learner>       audio and work the child has produced
   primer import <file.json>         load a record exported from another install
   primer delete --learner <name>    erase a child: every row, every recording  [--yes]
@@ -487,6 +488,22 @@ async function main(): Promise<void> {
       break;
 
     case 'fit': {
+      if (has('export-contribution')) {
+        const contribution = exportContribution();
+        const target = flag('out');
+        if (target) {
+          writeFileSync(target, JSON.stringify(contribution, null, 2), 'utf8');
+          out(`wrote ${target} — ${contribution.skills.length} skills, counts only`);
+        } else {
+          out(contribution);
+        }
+        out(
+          `\nThis file has no learner name, no responses, no timestamps — just how many\n` +
+            `attempts each skill has seen here. Nothing was sent anywhere; what you do\n` +
+            `with the file is up to you.`,
+        );
+        break;
+      }
       const result = fitParameters({
         minSamples: Number(flag('min-samples', '30')),
         apply: has('apply'),
