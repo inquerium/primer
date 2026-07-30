@@ -81,10 +81,10 @@ So the open question is the terms, and terms are settled early or not at all. On
 company holds a few years of a few million childhoods, portability becomes a feature they
 will never ship. This repository exists now, while the record is still small enough to
 belong to families, to make the other terms concrete: one file the family holds, evidence
-auditable row by row, an export that takes everything, pedagogy in plain text anyone can
-read and fork rather than buried in a model's weights, a review gate no unattended model
-can lift, and nothing that phones home. Every design commitment below is one of those
-terms, written as code.
+auditable row by row, an export that carries the whole history, pedagogy in plain text
+anyone can read and fork rather than buried in a model's weights, a review gate no
+unattended model can lift, and nothing that phones home. Every design commitment below is
+one of those terms, written as code.
 
 None of it matters if this stays small. The proprietary version will have consumer polish
 and a marketing budget. The open version has to win on what they structurally cannot
