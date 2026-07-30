@@ -310,6 +310,7 @@ The clicks are in the record.
 | **Open Learner Record** | 20-table SQLite schema. Evidence is append-only. Full spec in [SPEC.md](SPEC.md). |
 | **Mastery model** | Bayesian Knowledge Tracing over a two-component forgetting curve. Recomputable from raw evidence at any time. |
 | **Scheduler** | Ranks lapsed / due-for-review / stuck / frontier, spread across strands so a session is not eight vowel drills. |
+| **Placement** | A cold start is placed, not assumed: an older child's first session probes at the band their age suggests and bisects to where they actually are. Derived entirely from evidence — nothing stored, nothing to drift. |
 | **Curriculum** | 213 skills, pre-K to grade 3, across reading, writing, math — with a prerequisite graph that crosses domains and probe templates instead of a fixed item bank. |
 | **Recordings** | The child reading aloud, stored locally. Off until an adult turns it on. |
 | **MCP server** | 28 tools. `learner_context` is the one that matters. Serves both the human-driven and unattended paths. |

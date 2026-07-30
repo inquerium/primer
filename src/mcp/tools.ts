@@ -74,7 +74,10 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj(
       {
         display_name: str('What the child is called. A first name or nickname is enough.'),
-        birth_date: str('ISO date. Used only to pick sensible starting difficulty.'),
+        birth_date: str(
+          'ISO date. Used to pick a sensible starting guess for a first placement ' +
+            'session — never shown as a judgment, and evidence overrides it either way.',
+        ),
         pronouns: str('e.g. "she/her". Omit if unknown — do not guess.'),
         locale: str('BCP-47 tag, default en-US'),
         timezone: str('IANA timezone'),

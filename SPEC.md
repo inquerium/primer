@@ -33,8 +33,9 @@ company that made the tutor disappears, the record must still open.
 ## Entities
 
 ### `learner`
-The child. Minimal PII by design: a display name, an approximate birth date (used only for
-grade-band defaults), locale, timezone.
+The child. Minimal PII by design: a display name, an approximate birth date (used only to
+pick the starting guess for cold-start placement — see `src/domain/placement.ts`), locale,
+timezone.
 
 ### `skill`
 An atom of learning. Not a lesson, not a worksheet — the smallest thing you can be said to
