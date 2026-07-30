@@ -131,13 +131,23 @@ function planStrand(
   at: Date,
 ): StrandPlan | null {
   const maxRank = Math.max(...expected.bands.map((b) => BAND_RANK[b]));
-  const rankOf = (s: Skill) => (s.grade_band ? BAND_RANK[s.grade_band as GradeBand] : 0);
+  /**
+   * Is this skill at or below the expected band's reach? A band this build does
+   * not know — possible once `primer import` has filled curriculum from a record
+   * written elsewhere — is not placed on this axis at all, so it stays out of the
+   * probing range rather than being silently treated as the easiest material.
+   */
+  const withinReach = (s: Skill): boolean => {
+    if (!s.grade_band) return true; // unbanded skills sort with the earliest material
+    const rank = BAND_RANK[s.grade_band as GradeBand];
+    return rank !== undefined && rank <= maxRank;
+  };
 
   // The ceiling: placement only probes material within the expected band's
   // reach. A child who clears the ceiling is placed; whatever lies above is the
   // normal frontier's job, session by session, with teaching attached.
   let ceiling = -1;
-  for (let i = 0; i < skills.length; i++) if (rankOf(skills[i]!) <= maxRank) ceiling = i;
+  for (let i = 0; i < skills.length; i++) if (withinReach(skills[i]!)) ceiling = i;
   if (ceiling < 0) return null; // whole strand sits above the expected bands
 
   let lower = -1; // highest index demonstrated
@@ -291,6 +301,19 @@ export function placementStatus(learnerId: string, at = new Date()): PlacementSt
   return { expected, domains };
 }
 
+/**
+ * Rank of a skill's band, or -1 if the band is one this build does not know.
+ *
+ * A grade_band is not always one of the five: `primer import` fills missing
+ * curriculum from the envelope, and a record written by a fork or a later primer
+ * can carry a band this build has never heard of. Reading BAND_RANK blindly then
+ * yields `undefined`, `Math.max(n, undefined)` is NaN, and `BANDS_BY_RANK[NaN]`
+ * is `undefined` — so `frontier_band` ends up undefined while its type says
+ * `GradeBand | null`. Unknown bands are simply not rankable on this axis, which
+ * is exactly what -1 means everywhere else here.
+ */
 function rankToBand(s: Skill): number {
-  return s.grade_band ? BAND_RANK[s.grade_band as GradeBand] : 0;
+  if (!s.grade_band) return 0;
+  const rank = BAND_RANK[s.grade_band as GradeBand];
+  return rank === undefined ? -1 : rank;
 }

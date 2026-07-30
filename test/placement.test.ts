@@ -8,7 +8,7 @@ const home = mkdtempSync(join(tmpdir(), 'primer-placement-'));
 process.env.PRIMER_HOME = home;
 process.env.PRIMER_DB = join(home, 'record.db');
 
-const { db, closeDb, all } = await import('../src/db/index.ts');
+const { db, closeDb, all, run } = await import('../src/db/index.ts');
 const { loadCurriculum } = await import('../src/curriculum/load.ts');
 const { createLearner } = await import('../src/record/learners.ts');
 const { recordObservations } = await import('../src/record/observations.ts');
@@ -21,6 +21,7 @@ const { learnerContext } = await import('../src/record/context.ts');
 const AT = new Date(Date.UTC(2026, 6, 29));
 const OBS_DAY = new Date(Date.UTC(2026, 6, 28));
 const GRAPH_ROOTS = ['pa_rhyme_recognize', 'cc_count_to_10', 'hw_grip_strokes'];
+const BANDS = ['pk', 'k', '1', '2', '3'];
 
 before(() => {
   db();
@@ -192,4 +193,38 @@ test('learner_context carries placement and tells the tutor to assess before tea
   const tot = learnerContext(createLearner({ display_name: 'Tot Context', birth_date: '2022-07-01' }).id, { at: AT });
   assert.equal(tot.placement, null);
   assert.ok(!tot.guidance.some((g) => g.includes('assess-mode')));
+});
+
+test('a grade band this build does not know cannot corrupt the frontier', () => {
+  // `primer import` fills missing curriculum from the envelope, so a record
+  // written by a fork or a later primer can introduce a band outside the five
+  // this build ranks. Reading BAND_RANK blindly made frontier_band `undefined`
+  // while its type promised `GradeBand | null` — the same class of quiet type
+  // lie that hid grade 3 from skill_search.
+  run(
+    `INSERT OR IGNORE INTO skill (id, domain, strand, name, grade_band, ordinal,
+                                  p_init, p_learn, p_guess, p_slip)
+     VALUES ('zz_unknown_band','math','counting','From another install','zz9', 99,
+             0.15, 0.2, 0.2, 0.1)`,
+  );
+  const child = createLearner({ display_name: 'Foreign Band', birth_date: '2018-05-01' });
+  // Demonstrate it, so it reaches the frontier computation.
+  recordObservations(
+    child.id,
+    Array.from({ length: 3 }, () => ({
+      skill_id: 'zz_unknown_band',
+      correct: 1 as const,
+      ts: OBS_DAY.toISOString(),
+      source: 'test',
+    })),
+  );
+
+  const status = placementStatus(child.id, AT)!;
+  const band = status.domains.math.frontier_band;
+  assert.ok(
+    band === null || BANDS.includes(band),
+    `frontier_band must be a known band or null, got ${JSON.stringify(band)}`,
+  );
+  // And the whole structure must still survive the trip to a tutor.
+  assert.doesNotThrow(() => JSON.stringify(status));
 });
