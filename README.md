@@ -61,6 +61,39 @@ because each one is worth building for exactly one child for exactly one afterno
 actual record. Read the comment at the top: every design decision names the row in the record
 that forced it. That is the standard.
 
+## Why this must not be owned
+
+"Primer" is not a neutral name. A primer is the book you read first. To **prime** someone
+is to decide, before they decide anything, what will come easily to their mind later. The
+same record that lets a tutor meet a child where she is — what holds her attention, what
+makes her quit, whom she trusts, what she believes about herself — is, in other hands, the
+manual for pointing her somewhere.
+
+Now scale it the way a company must. Years of adaptation per child, millions of children,
+one login in front of all of it. Nobody at that company has to be malicious for this to go
+wrong; ordinary incentives are enough — engagement to defend, renewals to protect, a board
+to answer to. A tutor a generation grows up with is not an education product; it is the
+most intimate influence infrastructure ever proposed. And it will be built, because the
+honest half of the pitch is true: every child deserves the tutoring only wealthy children
+get today.
+
+So the open question is the terms, and terms are settled early or not at all. Once one
+company holds a few years of a few million childhoods, portability becomes a feature they
+will never ship. This repository exists now, while the record is still small enough to
+belong to families, to make the other terms concrete: one file the family holds, evidence
+auditable row by row, an export that takes everything, pedagogy in plain text anyone can
+read and fork rather than buried in a model's weights, a review gate no unattended model
+can lift, and nothing that phones home. Every design commitment below is one of those
+terms, written as code.
+
+None of it matters if this stays small. The proprietary version will have consumer polish
+and a marketing budget. The open version has to win on what they structurally cannot
+offer: your child's record is yours, the teaching is inspectable, and the curriculum was
+improved by a thousand teachers instead of a growth team. That is made of contributions —
+a corrected prerequisite, a curriculum pack past grade 3 or in another language, a bug
+report from a real child's week. If any part of this made you want to build, start with
+[CONTRIBUTING.md](CONTRIBUTING.md); it is short, and honest about what is needed most.
+
 ---
 
 ## Quick start
