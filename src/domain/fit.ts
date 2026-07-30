@@ -43,6 +43,31 @@ export interface FitOptions {
   actor?: string;
 }
 
+/**
+ * What one install can contribute toward fitting parameters for the whole
+ * community, without exposing anything about a specific child.
+ *
+ * These are exactly the six integers `fitParameters` reduces the evidence table
+ * to before it computes anything — no item text, no responses, no timestamps, no
+ * learner identity. Aggregating these across many installs is a fundamentally
+ * smaller and safer thing than aggregating evidence, and it is the only thing
+ * this file ever exports.
+ */
+export interface SkillContribution {
+  skill_id: string;
+  first_attempts: number;
+  first_correct: number;
+  post_mastery: number;
+  post_mastery_wrong: number;
+  learning_windows: number;
+  opportunities_before_first_correct: number;
+}
+
+export interface Contribution {
+  contribution_format: 1;
+  skills: SkillContribution[];
+}
+
 const FLOOR = 0.02;
 /**
  * A guess rate above a half means a wrong answer is *evidence of knowing*, which
@@ -56,24 +81,31 @@ const SLIP_CEILING = 0.3;
 const LEARNED_STREAK = 3;
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
-export function fitParameters(opts: FitOptions = {}): {
-  fitted: SkillFit[];
-  skipped: SkillFit[];
-  applied: boolean;
-  min_samples: number;
-} {
-  const minSamples = opts.minSamples ?? 30;
+interface Tally {
+  firstAttempts: number;
+  firstCorrect: number;
+  postMastery: number;
+  postMasteryWrong: number;
+  learningWindows: number;
+  opportunitiesBeforeFirstCorrect: number;
+}
+const blankTally = (): Tally => ({
+  firstAttempts: 0,
+  firstCorrect: 0,
+  postMastery: 0,
+  postMasteryWrong: 0,
+  learningWindows: 0,
+  opportunitiesBeforeFirstCorrect: 0,
+});
 
-  const skills = all<{
-    id: string;
-    name: string;
-    p_guess: number;
-    p_slip: number;
-    p_learn: number;
-  }>(`SELECT id, name, p_guess, p_slip, p_learn FROM skill`);
-
-  // One pass over the evidence, ordered per learner per skill, so we can tell a
-  // first attempt from a post-mastery one.
+/**
+ * One pass over the evidence, ordered per learner per skill, so we can tell a
+ * first attempt from a post-mastery one. Reduces to the six counts every
+ * downstream consumer here actually needs — the raw rows never leave this
+ * function, including `learner_id` and `ts`, which exist only to order and
+ * segment this pass.
+ */
+function computeTallies(): Map<string, Tally> {
   const rows = all<{
     learner_id: string;
     skill_id: string;
@@ -86,23 +118,7 @@ export function fitParameters(opts: FitOptions = {}): {
       ORDER BY learner_id, skill_id, ts ASC, rowid ASC`,
   );
 
-  interface Tally {
-    firstAttempts: number;
-    firstCorrect: number;
-    postMastery: number;
-    postMasteryWrong: number;
-    learningWindows: number;
-    opportunitiesBeforeFirstCorrect: number;
-  }
   const tally = new Map<string, Tally>();
-  const blank = (): Tally => ({
-    firstAttempts: 0,
-    firstCorrect: 0,
-    postMastery: 0,
-    postMasteryWrong: 0,
-    learningWindows: 0,
-    opportunitiesBeforeFirstCorrect: 0,
-  });
 
   let currentKey = '';
   let streak = 0;
@@ -111,7 +127,7 @@ export function fitParameters(opts: FitOptions = {}): {
 
   for (const row of rows) {
     const key = `${row.learner_id}|${row.skill_id}`;
-    const t = tally.get(row.skill_id) ?? blank();
+    const t = tally.get(row.skill_id) ?? blankTally();
     tally.set(row.skill_id, t);
 
     if (key !== currentKey) {
@@ -148,11 +164,61 @@ export function fitParameters(opts: FitOptions = {}): {
     streak = right ? streak + 1 : 0;
   }
 
+  return tally;
+}
+
+/**
+ * Everything a family can hand to the community to help fit priors for
+ * everyone, and nothing else: six integer counts per skill this install has
+ * ever touched. No learner id, no item text, no responses, no timestamps — the
+ * tally pass that produces these never returns anything else, by construction.
+ *
+ * This never writes anything and never talks to a network. It is a local file,
+ * same as `primer export` — what happens to it after that is a human decision,
+ * not this function's.
+ */
+export function exportContribution(): Contribution {
+  const tally = computeTallies();
+  const skills: SkillContribution[] = [];
+  for (const [skillId, t] of tally) {
+    if (t.firstAttempts === 0) continue; // nothing touched, nothing to contribute
+    skills.push({
+      skill_id: skillId,
+      first_attempts: t.firstAttempts,
+      first_correct: t.firstCorrect,
+      post_mastery: t.postMastery,
+      post_mastery_wrong: t.postMasteryWrong,
+      learning_windows: t.learningWindows,
+      opportunities_before_first_correct: t.opportunitiesBeforeFirstCorrect,
+    });
+  }
+  skills.sort((a, b) => a.skill_id.localeCompare(b.skill_id));
+  return { contribution_format: 1, skills };
+}
+
+export function fitParameters(opts: FitOptions = {}): {
+  fitted: SkillFit[];
+  skipped: SkillFit[];
+  applied: boolean;
+  min_samples: number;
+} {
+  const minSamples = opts.minSamples ?? 30;
+
+  const skills = all<{
+    id: string;
+    name: string;
+    p_guess: number;
+    p_slip: number;
+    p_learn: number;
+  }>(`SELECT id, name, p_guess, p_slip, p_learn FROM skill`);
+
+  const tally = computeTallies();
+
   const fitted: SkillFit[] = [];
   const skipped: SkillFit[] = [];
 
   for (const skill of skills) {
-    const t = tally.get(skill.id) ?? blank();
+    const t = tally.get(skill.id) ?? blankTally();
     const samples = {
       first_attempts: t.firstAttempts,
       post_mastery: t.postMastery,
