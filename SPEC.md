@@ -209,6 +209,25 @@ gate off is permitted and is recorded in `event_log` with who did it.
 run starts and again after every turn. A run that hits the ceiling stops mid-flight
 and says so.
 
+## Invariants
+
+The boundaries above are not conventions — they are pinned as executable doctrine in
+`test/invariants.test.ts`, so that moving any of them has to be a conscious, reviewed
+decision rather than a side effect of a refactor:
+
+| Guarantee | Enforced by |
+|---|---|
+| The unattended tutor's reach is exactly its allowlist, and every exposed tool is consciously classified as allowed or withheld | `test/invariants.test.ts`, `test/acp.test.ts` (both transports agree) |
+| No model-reachable tool can change settings — the review gate and budgets cannot be reached by prompt injection | `test/invariants.test.ts` |
+| The tutor cannot approve its own work: `plan_activity` has no status channel, and the gate is the install's setting, not the model's choice | `test/invariants.test.ts`, `test/autonomy.test.ts` |
+| Recordings are opaque to the model — metadata and human notes only, never the path, never the bytes | `test/invariants.test.ts` |
+| An activity that phones home, or reports nothing back to the record, is refused before it can be saved | `test/invariants.test.ts`, `test/validate.test.ts` |
+| Generated activities are served under a CSP that stops them talking to anything but this record | `test/security.test.ts` |
+| Deletion is real and export is complete — the family can always take everything and leave | `test/forget.test.ts`, `test/portability.test.ts` |
+
+A failing test in that file means a capability boundary moved. If the move is right,
+the PR that moves it must say why.
+
 ## What is deliberately not in the spec
 
 - **No lesson content.** No videos, no fixed item banks, no scripted curriculum. Skills
