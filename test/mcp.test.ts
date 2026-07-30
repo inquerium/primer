@@ -157,3 +157,26 @@ test('a whole tutoring loop runs over the protocol', async () => {
 test('an unknown learner fails loudly instead of inventing one', async () => {
   await assert.rejects(() => call('learner_context', { learner: 'Nobody At All' }), /Known learners/);
 });
+
+test('every grade band in the curriculum is reachable through skill_search', async () => {
+  // 69 of the 213 shipped skills are grade 3. Before the enum included '3',
+  // they were unfilterable — a tutor placing an eight-year-old could not ask
+  // for band-3 material by band at all.
+  const third = await call('skill_search', { grade_band: '3', limit: 500 });
+  assert.ok(third.length > 0, 'grade-3 skills must be filterable by band');
+  for (const s of third) assert.equal(s.grade_band, '3');
+
+  // And the guard for the next pack: any band a skill actually uses must be
+  // in the advertised enum, or that slice of the curriculum silently vanishes
+  // from band-filtered search.
+  const { tools } = await client.listTools();
+  const schema = tools.find((t) => t.name === 'skill_search')!.inputSchema as {
+    properties: { grade_band: { enum: string[] } };
+  };
+  const advertised = new Set(schema.properties.grade_band.enum);
+  const everything = await call('skill_search', { limit: 500 });
+  const used = new Set<string>(everything.map((s: { grade_band: string | null }) => s.grade_band).filter(Boolean));
+  for (const band of used) {
+    assert.ok(advertised.has(band), `band "${band}" is used by skills but missing from the skill_search enum`);
+  }
+});

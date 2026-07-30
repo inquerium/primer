@@ -1,7 +1,7 @@
 /** Open Learner Record — type surface. Mirrors src/db/schema.sql. */
 
 export type Domain = 'reading' | 'writing' | 'math';
-export type GradeBand = 'pk' | 'k' | '1' | '2';
+export type GradeBand = 'pk' | 'k' | '1' | '2' | '3';
 export type MasteryStatus = 'unseen' | 'learning' | 'mastered' | 'lapsed';
 export type EdgeKind = 'prerequisite' | 'component' | 'extends';
 export type ObservationKind =

@@ -423,7 +423,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({
       query: str('Text to match against id, name, description, strand.'),
       domain: { type: 'string', enum: ['reading', 'writing', 'math'] },
-      grade_band: { type: 'string', enum: ['pk', 'k', '1', '2'] },
+      grade_band: { type: 'string', enum: ['pk', 'k', '1', '2', '3'] },
       limit: num('Default 25.'),
     }),
     handler: (a) => {
