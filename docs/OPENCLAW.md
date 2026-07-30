@@ -68,10 +68,18 @@ Tool policy, in `~/.openclaw/openclaw.json` under `agents.list`:
   `write`, `edit`, `apply_patch`. It comments on PRs via `gh pr comment`
   through `exec`; it never modifies files.
 
-Each agent's workspace `AGENTS.md` should contain its lane's charter, copied
-from the lane description in `docs/WORLD.md`, plus the two standing rules:
-propose via PR only, and never touch anything outside `world/` and the lane's
-fixtures.
+Each agent's workspace `AGENTS.md` contains its lane's charter, copied from the
+lane description in `docs/WORLD.md`, plus the two standing rules: propose via
+PR only, and never touch anything outside `world/` and the lane's fixtures.
+
+All four agents take this repository as their workspace, so there is one
+`AGENTS.md` at the root carrying all four charters, and each agent reads the
+section for the id it is running as. That file is tracked in git and is the
+only OpenClaw scaffolding file in this repository that is; the rest
+(`SOUL.md`, `USER.md`, `TOOLS.md`, `memory/`) is generated, gitignored, and
+maintainer-side. The charter is not scaffolding. It is the instruction set
+every unattended run wakes up with, and it belongs under review like anything
+else that governs what these agents do.
 
 Useful property to rely on: cron jobs created by an agent are capped to the
 tools available to the creating turn, and the agent cannot widen the stored
@@ -181,21 +189,40 @@ give a pipeline agent the ability to admit its own work.
 ### 3. The attacker
 
 A watcher on open PRs, bound to `world-attacker`:
+`automation/watchers/world-proposals.js`. It polls `gh pr list`, keeps a
+seen-set in trigger state, and fires on what it has not attacked yet.
 
-```js
-const res = await tools.call('exec', {
-  command: 'gh pr list --repo VedSoni-dev/primer --json number,headRefName ' +
-           '--search "head:openclaw/" --state open'
-});
-const prs = JSON.parse(res?.result?.details?.aggregated ?? '[]');
-const seen = new Set(trigger.state?.seen ?? []);
-const fresh = prs.filter(p => !seen.has(p.number));
-json({
-  fire: fresh.length > 0,
-  message: `Attack PRs: ${fresh.map(p => '#' + p.number).join(', ')}`,
-  state: { seen: [...seen, ...fresh.map(p => p.number)].slice(-200) }
-});
+```bash
+openclaw cron add \
+  --name "attacker: world proposals" \
+  --agent world-attacker \
+  --every 1h \
+  --trigger-script ./automation/watchers/world-proposals.js \
+  --session isolated \
+  --tools exec,read,web_search,web_fetch \
+  --message "<the standing attack brief>" \
+  --announce --channel telegram --to "<maintainer-chat-id>"
 ```
+
+Two things it does differently from the obvious version, both load-bearing:
+
+It selects PRs by changed path, not by branch prefix. Scoping to
+`head:openclaw/` would attack only agent branches, and the failure modes in the
+brief below belong to World content rather than to agents. The first World PR
+in this repository is human-authored; a branch filter would have skipped it,
+and a human PR touching only `src/` has nothing in it to attack. The filter is
+therefore: any author, any branch, at least one changed file under `world/`.
+
+It keys the seen-set on PR number plus head commit, so a proposal pushed again
+after an attack gets attacked again. Keying on the number alone attacks the
+first revision and nothing after it. The attacker holds no `write` tool, so its
+own comment never moves a head and never re-fires the watcher.
+
+Cadence is hourly rather than weekly. A run that finds nothing fresh costs only
+the script budget, and a PR is worth attacking while its author is still
+looking at it. Each fired run is capped to a few PRs so that each one gets a
+real read; the overflow stays unseen and is picked up on the next run, and the
+message says how many are waiting.
 
 Its payload prompt is a standing attack brief, not a review rubric: find the
 reason this proposal is wrong. A miscited paper. A skill placed a grade early.
