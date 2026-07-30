@@ -525,6 +525,15 @@ Tablet recording needs a one-time certificate install on each device
 (`primer start --lan --https`); that is built, but it is still a multi-step trust flow
 on iOS and Android, not silent.
 
+**Releases currently ship a Windows binary only.** The release workflow builds all
+five platforms, but it needs GitHub Actions to actually run, and at the time of this
+release the account it runs under was billing-locked, so nothing built. The Windows
+binary above was built and verified locally and published by hand as a stopgap.
+`curl ... install.sh | sh` on macOS or Linux will fail until someone with access to
+those platforms — or a working CI run — builds and attaches those binaries; building
+from source (`npm install && npm run build && npm link`) works on every platform in
+the meantime.
+
 The obvious next things after that: fitting BKT parameters per skill from real data, and
 curriculum packs beyond grade 3 and beyond English.
 
