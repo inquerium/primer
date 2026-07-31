@@ -28,6 +28,25 @@ const REPO = 'VedSoni-dev/primer';
 const isWorldContent = (path) =>
   String(path ?? '').startsWith('world/') && !String(path).endsWith('.gitkeep');
 
+// Whether a PR has already been attacked at a given head is answered by the
+// pull request itself, not by trigger state. The attacker signs every comment
+// with the head it attacked, so the durable record lives on GitHub where it
+// cannot be lost. Trigger state is a cache in front of that, nothing more.
+//
+// This is not defensive decoration. Trigger state is empty after a forced
+// `openclaw cron run`, which executes the payload without ever evaluating the
+// watcher, and after any job edit that resets it. Observed: the first attack on
+// PR #7 was a forced run, so the next scheduled evaluation would have found an
+// empty seen-set and attacked it a second time. A duplicate attack comment is
+// the exact thing that teaches a reviewer to skim this layer.
+const attackedAt = (body, sha) => {
+  const b = String(body ?? '');
+  return (
+    b.includes(`<!-- world-attacker head=${sha} -->`) ||
+    new RegExp(`attacked at head ${sha}`, 'i').test(b)
+  );
+};
+
 // The turn that fires attacks every PR named in the message. Each one is a
 // close read of a diff plus source resolution, so a run that names ten is a
 // run that reads none of them properly. Overflow is not dropped, it waits for
@@ -43,7 +62,7 @@ try {
   const res = await tools.call('exec', {
     command:
       `gh pr list --repo ${REPO} --state open --limit 50 ` +
-      '--json number,title,headRefName,headRefOid,isDraft,url,files',
+      '--json number,title,headRefName,headRefOid,isDraft,url,files,comments',
   });
   const body = JSON.parse(String(res?.result?.details?.aggregated ?? ''));
   if (!Array.isArray(body)) {
@@ -76,6 +95,7 @@ if (failure) {
   // first revision of a PR and nothing after it. The attacker cannot write, so
   // its own comment never moves the head and never re-fires this.
   const seen = new Set(trigger.state?.seen ?? []);
+  const short = (p) => String(p.headRefOid ?? '').slice(0, 7);
   const key = (p) => `${p.number}@${String(p.headRefOid ?? '').slice(0, 12)}`;
 
   const candidates = prs.filter(
@@ -84,7 +104,11 @@ if (failure) {
       Array.isArray(p.files) &&
       p.files.some((f) => isWorldContent(f.path)),
   );
-  const fresh = candidates.filter((p) => !seen.has(key(p)));
+  const fresh = candidates.filter(
+    (p) =>
+      !seen.has(key(p)) &&
+      !(p.comments ?? []).some((c) => attackedAt(c.body, short(p))),
+  );
 
   // No silent cold-start seed here, unlike the research watcher. There, a first
   // run holds a lookback window of unrelated papers that cannot become one
@@ -101,7 +125,7 @@ if (failure) {
         .filter((f) => isWorldContent(f.path))
         .map((f) => `    ${f.path} (+${f.additions}/-${f.deletions})`)
         .join('\n');
-      return `- #${p.number} ${p.title}\n  ${p.url}\n${worldFiles}`;
+      return `- #${p.number} ${p.title}\n  ${p.url}\n  head ${short(p)}\n${worldFiles}`;
     };
 
     json({
@@ -119,6 +143,11 @@ if (failure) {
             'run; this run is capped so each PR gets a real read.'
           : '') +
         '\n\nAttack each one on its own terms, then post with `gh pr comment`. ' +
+        'Begin every comment with the line `<!-- world-attacker head=<sha> -->` ' +
+        'using that PR head above, then a sentence naming yourself and the head ' +
+        'you attacked. The marker is how the next run knows this head is done, ' +
+        'and the naming is because your comment posts under the maintainer\'s ' +
+        'GitHub account and must not read as the maintainer\'s own words. ' +
         'Read the full diff before writing anything: ' +
         `\`gh pr diff <number> --repo ${REPO}\`. Resolve every DOI and every ` +
         'source the PR cites; a citation that does not resolve, or resolves to ' +

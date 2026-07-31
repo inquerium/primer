@@ -218,6 +218,21 @@ after an attack gets attacked again. Keying on the number alone attacks the
 first revision and nothing after it. The attacker holds no `write` tool, so its
 own comment never moves a head and never re-fires the watcher.
 
+The seen-set is a cache, not the record. Every attack comment opens with
+`<!-- world-attacker head=<sha> -->`, and the watcher treats the pull request
+itself as the durable answer to whether a head has been attacked. Trigger state
+is lost more easily than it looks: `openclaw cron run` executes the payload
+without evaluating the watcher at all, so a forced run leaves the state empty
+and the next scheduled evaluation would attack a pull request that already
+carries the findings. A duplicate attack comment is precisely what teaches a
+reviewer to skim this layer.
+
+The signature is also an attribution fix. The attacker posts through the
+maintainer's `gh` credentials, so its comments appear under the maintainer's
+GitHub account with nothing marking them machine-authored. The brief requires
+naming itself in the first sentence. Layer 2 saying something is not the same
+as the human saying it, and the record has to show which one spoke.
+
 Cadence is hourly rather than weekly. A run that finds nothing fresh costs only
 the script budget, and a PR is worth attacking while its author is still
 looking at it. Each fired run is capped to a few PRs so that each one gets a
