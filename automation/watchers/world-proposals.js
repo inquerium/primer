@@ -56,8 +56,25 @@ const MAX_PER_RUN = 3;
 // ~50 bytes per entry against a 16 KB state cap.
 const KEEP = 200;
 
+// How many consecutive failures before breakage is worth a model turn.
+//
+// Firing on the first failed check was wrong and cost eight aborted runs and
+// eight Telegram alerts in one day. This runs on a laptop that sleeps and
+// changes networks. When the gh call fails for that reason, waking an agent to
+// diagnose it is self-defeating: the same missing network prevents the agent's
+// own provider call, so the run hangs for twenty minutes and aborts. The
+// diagnosis cannot run under the condition it was written to diagnose.
+//
+// So a call that never completed is counted, not announced. A call that
+// completed and returned the wrong shape is announced at once, because a
+// response arrived, which means the network is up, the agent can actually run,
+// and something about the gh contract has genuinely changed.
+const CONNECT_ALERT_AFTER = 3; // hourly cadence, so roughly three hours down
+const SHAPE_ALERT_AFTER = 1;
+
 let prs = null;
 let failure = '';
+let shapeFailure = false;
 try {
   const res = await tools.call('exec', {
     command:
@@ -67,6 +84,7 @@ try {
   const body = JSON.parse(String(res?.result?.details?.aggregated ?? ''));
   if (!Array.isArray(body)) {
     failure = 'unexpected gh response shape (expected a JSON array)';
+    shapeFailure = true;
   } else {
     prs = body;
   }
@@ -75,18 +93,41 @@ try {
 }
 
 if (failure) {
-  // A watcher that returns fire: false when its check breaks is
-  // indistinguishable from a healthy watcher with nothing to report. Expired
-  // gh auth is the likely cause and it fails silently forever. Preserve the
-  // existing state rather than returning fresh state: wiping it would re-attack
-  // every open PR on the next successful run.
+  // A watcher that goes quiet when its check breaks is indistinguishable from a
+  // healthy watcher with nothing to report, so persistent breakage still has to
+  // speak. It just does not have to speak on the first stumble.
+  const prev = trigger.state ?? {};
+  const streak = (prev.failStreak ?? 0) + 1;
+  const firstFailAt = prev.firstFailAt ?? Date.now();
+  const threshold =
+    prev.nextAlertAt ?? (shapeFailure ? SHAPE_ALERT_AFTER : CONNECT_ALERT_AFTER);
+  const alert = streak >= threshold;
+
+  // Back off after each alert, so a genuinely long outage reports at three
+  // hours, then twelve, then two days, instead of once an hour forever. Nothing
+  // is learned from the ninth identical alert that the first did not say.
+  const hours = Math.round((Date.now() - firstFailAt) / 36e5);
+
   json({
-    fire: true,
-    message:
-      `WATCHER BROKEN (world-proposals): the gh check failed: ${failure}. ` +
-      'Post no PR comments from this run. Diagnose the watcher and report. ' +
-      'Check `gh auth status` first.',
-    state: trigger.state,
+    fire: alert,
+    message: alert
+      ? `WATCHER BROKEN (world-proposals): the gh check has failed ${streak} ` +
+        `time${streak === 1 ? '' : 's'} in a row, over about ${hours} hour` +
+        `${hours === 1 ? '' : 's'}. Latest: ${failure}. Post no PR comments ` +
+        'from this run. If your own web and provider calls are also failing, ' +
+        'this is the machine being offline rather than the watcher being ' +
+        'wrong: say that in one sentence and stop, do not retry in a loop. ' +
+        'Otherwise diagnose it, starting with `gh auth status`, and report.'
+      : undefined,
+    // Spread the previous state so the seen-set survives an outage. Wiping it
+    // would re-attack every open PR the moment the network came back.
+    state: {
+      ...prev,
+      failStreak: streak,
+      firstFailAt,
+      nextAlertAt: alert ? streak * 4 : threshold,
+      lastError: failure.slice(0, 120),
+    },
   });
 } else {
   // Keyed by head commit, not PR number. A proposer that pushes a fix in
@@ -118,6 +159,8 @@ if (failure) {
   const waiting = fresh.length - batch.length;
 
   if (batch.length === 0) {
+    // Both success paths write fresh state without the failure counters, which
+    // is how a recovered check resets its streak and its backoff.
     json({ fire: false, state: { seen: [...seen], checkedAt: Date.now() } });
   } else {
     const describe = (p) => {

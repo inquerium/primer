@@ -70,8 +70,24 @@ const url =
   '&select=DOI,title,created&sort=created&order=desc&rows=50' +
   `&mailto=${encodeURIComponent(MAILTO)}`;
 
+// How many consecutive failures before breakage is worth a model turn. The
+// attacker watcher learned this the expensive way: firing on the first failed
+// check cost eight aborted runs and eight alerts in a day, because the machine
+// was offline and waking an agent to diagnose a missing network is
+// self-defeating. Its own provider call needs the same network. A call that
+// never completed is counted. A call that completed and came back wrong is
+// announced at once, since a response arriving proves the network is up and
+// something about the Crossref contract has actually changed.
+//
+// This watcher runs weekly, so a streak of 2 means one missed cycle before the
+// maintainer hears about it. That is the right trade against a guaranteed
+// wasted run every time the laptop happens to be asleep on the hour.
+const CONNECT_ALERT_AFTER = 2;
+const SHAPE_ALERT_AFTER = 1;
+
 let items = null;
 let failure = '';
+let shapeFailure = false;
 try {
   const res = await tools.call('exec', {
     command: `curl -sS --max-time 20 '${url}'`,
@@ -79,6 +95,7 @@ try {
   const body = JSON.parse(String(res?.result?.details?.aggregated ?? ''));
   if (body?.status !== 'ok' || !Array.isArray(body?.message?.items)) {
     failure = `unexpected Crossref response shape (status ${body?.status ?? 'none'})`;
+    shapeFailure = true;
   } else {
     items = body.message.items;
   }
@@ -87,17 +104,39 @@ try {
 }
 
 if (failure) {
-  // A watcher that returns fire: false when its check breaks is
-  // indistinguishable from a healthy watcher with nothing to report. Breakage
-  // is actionable state, so say so. Preserve the existing DOI set rather than
-  // returning fresh state: wiping it would make next week's run treat several
-  // hundred known papers as new.
+  // A watcher that goes quiet when its check breaks is indistinguishable from a
+  // healthy watcher with nothing to report, so persistent breakage still has to
+  // speak. It just does not have to speak on the first stumble.
+  const prev = trigger.state ?? {};
+  const streak = (prev.failStreak ?? 0) + 1;
+  const firstFailAt = prev.firstFailAt ?? Date.now();
+  const threshold =
+    prev.nextAlertAt ?? (shapeFailure ? SHAPE_ALERT_AFTER : CONNECT_ALERT_AFTER);
+  const alert = streak >= threshold;
+  const days = Math.round((Date.now() - firstFailAt) / 864e5);
+
   json({
-    fire: true,
-    message:
-      `WATCHER BROKEN (${CLAIM_FAMILY}): the Crossref check failed: ${failure}. ` +
-      'Do not propose claims from this run. Diagnose the watcher and report.',
-    state: trigger.state,
+    fire: alert,
+    message: alert
+      ? `WATCHER BROKEN (${CLAIM_FAMILY}): the Crossref check has failed ` +
+        `${streak} time${streak === 1 ? '' : 's'} in a row, over about ` +
+        `${days} day${days === 1 ? '' : 's'}. Latest: ${failure}. Do not ` +
+        'propose claims from this run. If your own web and provider calls are ' +
+        'also failing, this is the machine being offline rather than the ' +
+        'watcher being wrong: say that in one sentence and stop, do not retry ' +
+        'in a loop. Otherwise diagnose it and report.'
+      : undefined,
+    // Spread the previous state so the DOI set survives an outage. Wiping it
+    // would make the next successful run treat several hundred known papers as
+    // new. Both success paths below write fresh state without these counters,
+    // which is how a recovered check resets its streak and its backoff.
+    state: {
+      ...prev,
+      failStreak: streak,
+      firstFailAt,
+      nextAlertAt: alert ? streak * 4 : threshold,
+      lastError: failure.slice(0, 120),
+    },
   });
 } else {
   const seen = new Set(trigger.state?.dois ?? []);

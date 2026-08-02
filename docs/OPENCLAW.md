@@ -163,6 +163,22 @@ there is no reason to hammer anyone's server. Author watchers around
 actionable state, not only success: a watcher that goes quiet when its check
 fails looks healthy while broken, so surface fetch failures in `message`.
 
+Surface them on a streak, though, not on the first stumble. This runs on a
+laptop that sleeps and changes networks, and firing a model turn to diagnose a
+missing network is self-defeating, because the agent's own provider call needs
+the same network that just failed. Measured on the attacker watcher: one
+offline stretch produced eight fired runs, each hanging until it aborted, and
+eight failure alerts. The rule both watchers now follow is that a call which
+never completed is counted, while a call that completed and returned the wrong
+shape is announced at once, since a response arriving proves the network is up
+and the source contract is what changed. Alerts back off after each firing, so
+a long outage reports a few times rather than once an hour forever, and the
+counters reset the moment a check succeeds.
+
+Give every job a `--timeout-seconds` too. A run with no ceiling that loses the
+network does not fail, it hangs: the aborted attacker runs above burned between
+sixteen and twenty-three minutes each before giving up.
+
 ### 2. The proposer protocol
 
 The fired payload runs as an isolated agent turn. Isolated cron runs are
