@@ -132,7 +132,15 @@ export const CORPS = [
     task: 'Keep test/fixtures/ rich and true to the schema.',
     deny: [...NEVER, 'web_search', 'web_fetch'],
     standUp: 1,
-    jobs: [],
+    jobs: [
+      {
+        name: 'fixtures: corpus drift',
+        every: '24h',
+        triggerScript: 'automation/watchers/fixture-drift.js',
+        tools: ['exec', 'read', 'write', 'edit'],
+        timeoutSeconds: T.build,
+      },
+    ],
   },
   {
     id: 'model-auditor',
