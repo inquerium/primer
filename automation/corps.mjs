@@ -148,7 +148,15 @@ export const CORPS = [
     task: 'Find where the mastery model tells a lie.',
     deny: [...NEVER, 'web_search', 'web_fetch'],
     standUp: 3,
-    jobs: [],
+    jobs: [
+      {
+        name: 'model: property audit',
+        every: '24h',
+        triggerScript: 'automation/watchers/model-audit.js',
+        tools: ['exec', 'read', 'write', 'edit'],
+        timeoutSeconds: T.build,
+      },
+    ],
   },
   {
     id: 'misconception-miner',
@@ -156,7 +164,15 @@ export const CORPS = [
     task: 'Find stable wrong models in the evidence, unaided by any label.',
     deny: [...NEVER, 'web_search', 'web_fetch'],
     standUp: 3,
-    jobs: [],
+    jobs: [
+      {
+        name: 'misconceptions: detector precision',
+        every: '24h',
+        triggerScript: 'automation/watchers/misconception-precision.js',
+        tools: ['exec', 'read', 'write', 'edit'],
+        timeoutSeconds: T.build,
+      },
+    ],
   },
   {
     id: 'accommodation-marshal',

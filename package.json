@@ -1,7 +1,7 @@
 {
   "name": "primer-brain",
   "version": "0.1.2",
-  "description": "An open learner record + MCP server. The memory layer for AI tutoring. No fixed interface — the tutor builds one per child, per moment.",
+  "description": "An open learner record + MCP server. The memory layer for AI tutoring. No fixed interface \u2014 the tutor builds one per child, per moment.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -33,7 +33,9 @@
     "seed": "node --experimental-strip-types src/cli.ts curriculum:load",
     "corps": "node scripts/corps.mjs status",
     "corps:doctor": "node scripts/corps.mjs doctor",
-    "corps:apply": "node scripts/corps.mjs apply"
+    "corps:apply": "node scripts/corps.mjs apply",
+    "audit": "node --experimental-strip-types scripts/model-audit.mjs",
+    "mine": "node --experimental-strip-types scripts/mine-misconceptions.mjs"
   },
   "keywords": [
     "education",
