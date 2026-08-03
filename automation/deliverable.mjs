@@ -25,17 +25,20 @@
  */
 
 /**
- * @typedef {'proposed'|'nothing'|'finding'|'blocked'|'alarm'|'malformed'} Shape
+ * @typedef {'proposed'|'posted'|'nothing'|'finding'|'blocked'|'alarm'|'failed'|'malformed'} Shape
  */
 
 /** Shapes that represent completed work, whatever their content. */
-export const COMPLETE = new Set(['proposed', 'nothing', 'finding', 'blocked', 'alarm']);
+export const COMPLETE = new Set(['proposed', 'posted', 'nothing', 'finding', 'blocked', 'alarm']);
 
 /** Shapes the adjutant is allowed to put in front of a person. */
 export const ESCALATABLE = new Set(['proposed', 'finding', 'blocked', 'alarm']);
 
 /** Shapes that mean the agent could not finish alone. Watch the rate, not the instance. */
 export const ESCALATION = new Set(['blocked', 'alarm']);
+
+/** Not the agent's fault. The run never got far enough to have an opinion. */
+export const INFRASTRUCTURE = new Set(['failed']);
 
 const PR_URL = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/;
 
@@ -71,7 +74,21 @@ const PLANNING = [
   /\bin (a|the) (follow[- ]?up|subsequent) run\b/i,
 ];
 
-/** Something is wrong in a way that is not this run's business to solve. */
+/**
+ * Something is wrong in a way that is not this run's business to solve.
+ *
+ * The second half of this list was written from production replies, not from
+ * imagination, and it matters more than the first half. On 2026-07-30 the
+ * research lane was woken twice with `exec` denied, correctly refused to
+ * fabricate a pull request, and said so at length. Both runs finished
+ * `status: ok` and delivered. An earlier version of this file read the phrase
+ * "No PR opened" and filed them as a quiet week.
+ *
+ * The agent's own words were "that is a pipeline breakage, not an empty week".
+ * It was right, and the gate is what failed. A tool denial, a policy that is
+ * not being honored, or a protocol that cannot execute is a blocker, and a
+ * blocker reaches a person.
+ */
 const BLOCKED = [
   /\bboundar(y|ies)\b/i,
   /\bnot (permitted|allowed|authorized)\b/i,
@@ -79,6 +96,15 @@ const BLOCKED = [
   /\bI (do not|don't) have (the )?(permission|authority|a tool|the tools)\b/i,
   /\binvariant\b/i,
   /\brequires? (a )?(human|maintainer|specialist|named reviewer)\b/i,
+  // Capability failures, as the lanes actually phrase them.
+  /\b(exec|tool)\b[^.]{0,40}\b(is |was )?(hard[- ]?denied|denied)\b/i,
+  /\ballowlist miss\b/i,
+  /\brequires? exec approval\b/i,
+  /\bcannot (obtain|create a worktree|run the mechanical validators|open a (pull request|PR))\b/i,
+  /\bnot executable in this run\b/i,
+  /\bpipeline breakage\b/i,
+  /\boperator action (is )?needed\b/i,
+  /\bis not honoring it\b/i,
 ];
 
 /** Stop the run and say so. Never rate limited. */
@@ -99,6 +125,27 @@ const NOTHING = [
   /\bnothing (new |fresh )?(to (attack|propose|report)|found|survived)\b/i,
   /\bno (findings?|defects?|objections?)\b/i,
   /\bempty (period|run)\b/i,
+  // "No PR. The one new work does not warrant a change to any World entry."
+  // The lane's real phrasing puts the verdict in a separate sentence from the
+  // outcome, which the patterns above all miss.
+  /\bdoes not warrant a change\b/i,
+  /^no PR\b/im,
+  /\b(off topic|discard(ed)?) and (said|say) so\b/i,
+];
+
+/**
+ * Work delivered as a pull request comment rather than a pull request.
+ *
+ * The attacker lanes hold no `write` tool by design, so their finished work is
+ * never a branch. Their deliverable is a comment, and an earlier version of
+ * this file had no shape for it: a complete, correct attack run that resolved
+ * seven DOIs and posted its findings came back `malformed`.
+ */
+const POSTED = [
+  /\b(comment|findings?) posted\b/i,
+  /\bposted (the |my )?(findings?|comment|that)\b/i,
+  /\battack complete\b/i,
+  /\bgh pr comment\b/i,
 ];
 
 /** A defect handed over with evidence, fix deliberately unwritten. */
@@ -121,18 +168,33 @@ const any = (patterns, text) => patterns.some((p) => p.test(text));
  * that opened one has by definition not stalled waiting for anybody.
  *
  * @param {string} reply The run's final text.
+ * @param {{status?: string}} [run] The run record, when there is one. `status`
+ *   distinguishes a lane that had nothing to say from a run that never got far
+ *   enough to have an opinion, which is not the same failure and not the same
+ *   fix. Seven of the attacker's runs in one offline stretch returned no text
+ *   at all; blaming the lane for those would bury the real signal.
  * @returns {{shape: Shape, reasons: string[], escalates: boolean}}
  */
-export function classify(reply) {
+export function classify(reply, run = {}) {
   const text = String(reply ?? '').trim();
   const reasons = [];
 
-  if (!text) {
-    return { shape: 'malformed', reasons: ['the run returned nothing at all'], escalates: false };
+  if (run.status === 'error' || !text) {
+    return {
+      shape: 'failed',
+      reasons: [text ? `the run errored: ${text.slice(0, 120)}` : 'the run returned nothing at all'],
+      escalates: false,
+    };
   }
 
   if (any(ALARM, text)) {
     return { shape: 'alarm', reasons: ['reports a possible attack or a real record'], escalates: true };
+  }
+
+  // Before every completion shape. A run that could not execute its own protocol
+  // has not declined to act, however much of its reply reads like it has.
+  if (any(BLOCKED, text)) {
+    return { shape: 'blocked', reasons: ['a boundary or a missing capability stopped the work'], escalates: true };
   }
 
   const asking = any(ASKING, text);
@@ -145,14 +207,14 @@ export function classify(reply) {
     return { shape: 'proposed', reasons, escalates: false };
   }
 
+  if (any(POSTED, text)) {
+    return { shape: 'posted', reasons: ['delivered its work as a pull request comment'], escalates: false };
+  }
+
   if (asking) {
     reasons.push('asks the operator to decide something, in a run nobody is attending');
     if (planning) reasons.push('describes what it would do rather than what it did');
     return { shape: 'malformed', reasons, escalates: false };
-  }
-
-  if (any(BLOCKED, text)) {
-    return { shape: 'blocked', reasons: ['a boundary stopped the work'], escalates: true };
   }
 
   if (any(NOTHING, text)) {
@@ -187,30 +249,51 @@ export function classify(reply) {
  * change the task or grant the capability. Shouting at it changes nothing,
  * because there is nobody there to shout at.
  *
- * @param {Array<{agentId: string, reply: string}>} runs
+ * @param {Array<{agentId: string, reply: string, status?: string}>} runs
  */
 export function escalationRate(runs) {
   const byAgent = new Map();
   for (const run of runs) {
-    const { shape } = classify(run.reply);
-    const row = byAgent.get(run.agentId) ?? { agentId: run.agentId, runs: 0, escalated: 0, malformed: 0 };
+    const { shape } = classify(run.reply, run);
+    const row = byAgent.get(run.agentId) ?? {
+      agentId: run.agentId,
+      runs: 0,
+      escalated: 0,
+      malformed: 0,
+      failed: 0,
+    };
     row.runs += 1;
     if (ESCALATION.has(shape)) row.escalated += 1;
     if (shape === 'malformed') row.malformed += 1;
+    if (shape === 'failed') row.failed += 1;
     byAgent.set(run.agentId, row);
   }
   return [...byAgent.values()]
-    .map((r) => ({
-      ...r,
-      escalation_rate: Number((r.escalated / r.runs).toFixed(3)),
-      malformed_rate: Number((r.malformed / r.runs).toFixed(3)),
-      // A lane over a third is a task decomposition problem, not a discipline one.
-      verdict:
-        r.escalated / r.runs > 0.33
-          ? 'the task is too big or the capability is missing'
-          : r.malformed / r.runs > 0.2
-            ? 'the charter is not landing; the lane keeps asking instead of acting'
-            : 'healthy',
-    }))
-    .sort((a, b) => b.escalation_rate - a.escalation_rate);
+    .map((r) => {
+      // Infrastructure failures are not the lane's conduct and must not be
+      // averaged into its judgment. They are their own verdict, and they
+      // outrank the others: a lane failing half its runs has no conduct to
+      // assess, it has a machine problem.
+      const answered = r.runs - r.failed;
+      const escalation_rate = answered ? Number((r.escalated / answered).toFixed(3)) : 0;
+      const malformed_rate = answered ? Number((r.malformed / answered).toFixed(3)) : 0;
+      const failure_rate = Number((r.failed / r.runs).toFixed(3));
+      return {
+        ...r,
+        answered,
+        escalation_rate,
+        malformed_rate,
+        failure_rate,
+        // A lane over a third is a task decomposition problem, not a discipline one.
+        verdict:
+          failure_rate > 0.3
+            ? 'the runs are not completing; this is the machine, not the lane'
+            : escalation_rate > 0.33
+              ? 'the task is too big or the capability is missing'
+              : malformed_rate > 0.2
+                ? 'the charter is not landing; the lane keeps asking instead of acting'
+                : 'healthy',
+      };
+    })
+    .sort((a, b) => b.failure_rate - a.failure_rate || b.escalation_rate - a.escalation_rate);
 }
