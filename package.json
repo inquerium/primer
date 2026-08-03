@@ -35,7 +35,8 @@
     "corps:doctor": "node scripts/corps.mjs doctor",
     "corps:apply": "node scripts/corps.mjs apply",
     "audit": "node --experimental-strip-types scripts/model-audit.mjs",
-    "mine": "node --experimental-strip-types scripts/mine-misconceptions.mjs"
+    "mine": "node --experimental-strip-types scripts/mine-misconceptions.mjs",
+    "accommodations": "node --experimental-strip-types scripts/accommodation-audit.mjs"
   },
   "keywords": [
     "education",
