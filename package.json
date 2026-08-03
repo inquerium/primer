@@ -30,7 +30,10 @@
     "prepare": "node scripts/embed-assets.mjs",
     "package": "node scripts/embed-assets.mjs && node scripts/package.mjs --binary",
     "test": "node scripts/embed-assets.mjs && node --experimental-strip-types --test test/*.test.ts",
-    "seed": "node --experimental-strip-types src/cli.ts curriculum:load"
+    "seed": "node --experimental-strip-types src/cli.ts curriculum:load",
+    "corps": "node scripts/corps.mjs status",
+    "corps:doctor": "node scripts/corps.mjs doctor",
+    "corps:apply": "node scripts/corps.mjs apply"
   },
   "keywords": [
     "education",
