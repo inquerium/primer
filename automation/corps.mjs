@@ -203,9 +203,19 @@ export const CORPS = [
     id: 'activity-attacker',
     agentClass: 'engineering',
     task: 'Find the reason a generated activity will fail a child. Admit nothing.',
+    // Reads and reports. It never fixes what it finds, because a fix from the
+    // attacker would be its own work entering unreviewed.
     deny: READ_ONLY,
     standUp: 5,
-    jobs: [],
+    jobs: [
+      {
+        name: 'activities: reviewer precision',
+        every: '24h',
+        triggerScript: 'automation/watchers/activity-review.js',
+        tools: ['exec', 'read'],
+        timeoutSeconds: T.review,
+      },
+    ],
   },
   {
     id: 'scheduler-critic',
