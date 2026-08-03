@@ -4,6 +4,7 @@ import {
   type ActiveAccommodation,
   type AccommodationFinding,
 } from './accommodations.ts';
+import { reviewActivity } from './activity-review.ts';
 
 /**
  * Check a generated activity before a child can ever be shown it.
@@ -186,6 +187,19 @@ export function validateInterface(html: string, opts: ValidateOptions = {}): Val
       rule: 'no_script',
       message: 'The page has no script, so it cannot respond to a child or record anything.',
     });
+  }
+
+  /* --------------------------------------------------- what it does to a child -- */
+
+  // Hard rule 5 and the evidence contract. Both were prompt-only until now: the
+  // tutor was asked not to build a streak counter, and asked to record what the
+  // child said, and nothing checked either.
+  const review = reviewActivity(html);
+  for (const r of review.refusals) {
+    errors.push({ rule: `activity:${r.rule}`, message: r.message, hint: r.hint });
+  }
+  for (const f of review.flags) {
+    warnings.push({ rule: `activity:${f.rule}`, message: f.message, hint: f.hint });
   }
 
   /* ------------------------------------------------------ accommodations -- */

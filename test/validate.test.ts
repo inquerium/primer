@@ -55,7 +55,16 @@ test('a page that aliases the runtime up front is still recognised as instrument
 </script></body></html>`;
   const result = validateInterface(aliased);
   assert.equal(result.ok, true, explain(result));
-  assert.equal(result.warnings.length, 0, explain(result));
+
+  // This case is about instrumentation, and `warnings.length === 0` was a proxy
+  // for that when instrumentation was the only thing warned about. It is not any
+  // more: activity review also asks whether the page adapts and whether it can
+  // stop early, and this six-line fixture does neither because it is a fixture
+  // rather than an activity. Assert the intent instead of the proxy.
+  const instrumentation = result.warnings.filter((w) =>
+    ['never_ends', 'no_affect', 'reports_nothing'].includes(w.rule),
+  );
+  assert.deepEqual(instrumentation, [], explain(result));
 });
 
 test('a commented-out call does not count as instrumentation', () => {
