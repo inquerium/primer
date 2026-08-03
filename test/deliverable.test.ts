@@ -92,9 +92,84 @@ test('announcing intent is malformed; an unattended run has no next turn', () =>
   assert.equal(r.shape, 'malformed');
 });
 
-test('an empty reply is malformed rather than silently fine', () => {
-  assert.equal(classify('').shape, 'malformed');
-  assert.equal(classify(null).shape, 'malformed');
+test('an empty or errored run is the machine failing, not the lane', () => {
+  // Seven of the attacker's runs in one offline stretch came back with no text.
+  // Charging those to the lane's conduct would bury the signal that matters.
+  assert.equal(classify('').shape, 'failed');
+  assert.equal(classify(null).shape, 'failed');
+  assert.equal(
+    classify('The model did not produce a response before the model idle timeout.', {
+      status: 'error',
+    }).shape,
+    'failed',
+  );
+});
+
+/* ------------------------------------------------------------------------- */
+/* Cases taken verbatim from runs this pipeline actually produced. Every one   */
+/* of these was classified wrongly by the first version of this gate.          */
+/* ------------------------------------------------------------------------- */
+
+test('real: an exec denial is a blocker, however much it reads like a quiet week', () => {
+  // 2026-07-30. Both of these finished status ok and delivered, and the first
+  // version of this gate filed them as "declined to act, a complete outcome".
+  // The lane itself said the right thing and the gate is what failed.
+  const first = classify(
+    'Confirmed. `git`, `gh`, `curl`, `node`, `npm` all require exec approval that this cron run ' +
+      'cannot obtain. The proposer protocol is not executable in this run. I will report the ' +
+      'blocker as the deliverable rather than fabricate a PR or manufacture claims from DOIs I ' +
+      'cannot resolve. Research lane, spacing watcher fired, but the proposer protocol could not ' +
+      'run. No PR opened. Operator action needed.',
+  );
+  assert.equal(first.shape, 'blocked');
+  assert.equal(first.escalates, true);
+
+  const second = classify(
+    '`exec` is hard-denied for this run. That is decisive for what I can honestly deliver. ' +
+      'The stored cron job was registered with --tools exec,read,write,edit,web_search,web_fetch, ' +
+      'so the intended policy includes exec; this run environment is not honoring it. That is a ' +
+      'pipeline breakage, not an empty week.',
+  );
+  assert.equal(second.shape, 'blocked');
+  assert.equal(second.escalates, true);
+});
+
+test('real: an attacker delivers a comment, not a branch', () => {
+  // The attacker lanes hold no write tool by design, so a finished attack is
+  // never a pull request. This complete, correct run came back malformed.
+  const r = classify(
+    'Comment posted to PR #7. Attack complete on PR #7 (head 7df447c). I resolved all seven DOIs ' +
+      'against Crossref and checked each against the source abstract. Every DOI resolves to the ' +
+      'paper the entry names. Agreement counts are honestly deflated, not inflated. The proposal ' +
+      'survives. I posted that in one sentence, admitted nothing, and stated the comment is not a ' +
+      'merge signal.',
+  );
+  assert.equal(r.shape, 'posted');
+  assert.equal(r.escalates, false);
+});
+
+test('real: the verdict can sit in a different sentence from the outcome', () => {
+  const r = classify(
+    'No PR. The one new work does not warrant a change to any World entry. Watcher fire: 1 new ' +
+      'work in the spacing claim family, venue Journal of Memory and Language. The journal filter ' +
+      'is a venue filter, not a topic filter, and this one is off topic for the lane.',
+  );
+  assert.equal(r.shape, 'nothing');
+});
+
+test('infrastructure failure is diagnosed as the machine, not the lane', () => {
+  const rates = escalationRate([
+    { agentId: 'offline', reply: '', status: 'error' },
+    { agentId: 'offline', reply: '', status: 'error' },
+    { agentId: 'offline', reply: '', status: 'error' },
+    { agentId: 'offline', reply: 'Nothing warranted a change.', status: 'ok' },
+  ]);
+  const row = rates[0];
+  assert.equal(row.failed, 3);
+  assert.equal(row.answered, 1);
+  // The one run that answered was clean, so its conduct is not in question.
+  assert.equal(row.escalation_rate, 0);
+  assert.match(row.verdict, /the machine, not the lane/);
 });
 
 test('escalation rate names a bad task rather than a bad agent', () => {

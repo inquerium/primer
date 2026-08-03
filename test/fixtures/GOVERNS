@@ -1,0 +1,23 @@
+# What this corpus claims to describe.
+#
+# Git pathspecs, one per line, blank lines and # comments ignored. When a commit
+# touches any of these and the corpus has not moved since, fixture-keeper is
+# woken to decide whether any persona's expect block is now understated,
+# overstated, or silent about a new behavior.
+#
+# This list lives with the corpus rather than in the watcher for two reasons.
+# The corpus is the thing making the claim, so the claim's scope belongs next to
+# it and moves when fixture-keeper changes what it covers. And the invariant in
+# test/invariants.test.ts forbids anything under automation/ from naming the
+# record's modules at all, bluntly and on purpose, which is the correct rule and
+# not one to work around.
+#
+# Keep it narrow. A change to the HTTP surface or the CLI cannot make a claim
+# about the mastery model false, and waking a lane for it teaches the lane to
+# ignore its own watcher.
+
+src/domain/
+src/db/schema.sql
+src/db/migrations/
+src/record/
+src/curriculum/
