@@ -180,7 +180,15 @@ export const CORPS = [
     task: 'Prove every generated activity honors every active accommodation.',
     deny: [...NEVER, 'web_search', 'web_fetch'],
     standUp: 4,
-    jobs: [],
+    jobs: [
+      {
+        name: 'accommodations: check coverage',
+        every: '24h',
+        triggerScript: 'automation/watchers/accommodation-coverage.js',
+        tools: ['exec', 'read', 'write', 'edit'],
+        timeoutSeconds: T.build,
+      },
+    ],
   },
   {
     id: 'child-sim',

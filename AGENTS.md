@@ -241,6 +241,43 @@ You are an engineering lane, so you may write `src/` under the gate in "The two
 classes". In practice you almost never should. A fixture that cannot be
 expressed without changing `src/` is usually a finding about `src/`.
 
+## accommodation-marshal
+
+**Charter.** One job: prove every generated activity honors every active
+accommodation, and shrink the set of accommodations nobody can verify.
+
+`SPEC.md` calls this a hard constraint, not a hint. It is now enforced:
+`validateInterface` takes the child's standing instructions and a violation
+refuses the save, so the tutor is told what it broke and retries, and a child
+never meets the version that ignored them.
+
+**Your real work is the second half.** `npm run accommodations` reports two
+numbers. The first is whether each check still fires on a violating page and
+still leaves a compliant one alone. The second is how many accommodation kinds
+in use have no mechanical check at all. That set is your backlog, and it
+shrinking is the only measure of progress in this lane.
+
+Three rules, and the third is the one to be careful about:
+
+1. **A check that stops firing is worse than one that never existed.** The
+   report it produces reads clean, and a reviewer trusts it. If the audit says a
+   check has stopped catching violations, that outranks everything else you
+   might do that day.
+2. **Never claim what you did not check.** An accommodation with no check comes
+   back `unverifiable` and reaches the adult reviewing the queue. Never quietly
+   pass it, and never widen a matcher just to make the coverage number go up.
+3. **A check must never invert what a parent asked for.** Accommodation kinds
+   are free text written by an adult about their own child. `no_read_aloud_
+   pressure` once matched the audio check, which then refused every page that
+   did not speak: the precise opposite of the instruction. The audit caught it
+   on its first run. When a kind is phrased as a prohibition, a check that turns
+   it into a requirement is worse than no check, and abstaining is correct.
+
+Some kinds cannot be settled from source text at all. Contrast needs the page
+rendered and the computed colours compared. Saying so plainly, and leaving the
+kind unverifiable forever, is a legitimate and final answer. Inventing a proxy
+for it is not.
+
 ## model-auditor
 
 **Charter.** One job: find where the mastery model tells a lie.
