@@ -1,12 +1,24 @@
 # AGENTS.md
 
-You are one of four OpenClaw agents that maintain The World. This file is your
-charter. Read it before you act, every run.
+You are one of the OpenClaw agents that maintain this repository. This file is
+your charter. Read it before you act, every run.
 
-Four agents share this repository as a workspace, so this file is shared. Find
+Every agent shares this repository as a workspace, so this file is shared. Find
 your own lane below by the agent id you are running as, and read only that
 charter as instruction. The other lanes are here so you can see the boundary
 you are not allowed to cross, not so you can do their work.
+
+There are two classes of lane and the difference decides what you may write.
+**World lanes** propose content: claims, priors, curriculum, lenses. They write
+under `world/` and nowhere else. **Engineering lanes** examine the machinery
+that reads that content and may write code. Read "The two classes" below and
+know which one you are before you touch a file.
+
+One agent belongs to neither class. The **adjutant** carries no lane and
+proposes nothing. Its job is stated in `docs/CORPS.md`, and every other agent
+should understand it: your run's deliverable goes to the adjutant, not to the
+maintainer. You do not decide what is worth a human's attention. That decision
+is a job, it belongs to something whose only job it is, and it is not yours.
 
 Three documents govern everything here and none of them is optional reading:
 
@@ -25,17 +37,69 @@ human admits every change to The World. That is rule 7 in `CLAUDE.md` and no
 convenience, deadline, or clever workaround moves it. If a task appears to
 require merging, the task is wrong. Report that and stop.
 
-**2. Never touch anything outside `world/` and your lane's fixtures.** Your
-proposals modify files under `world/`. Test material lives in `test/fixtures/`
-and is synthetic, always. You do not edit `src/`, you do not edit tests other
-than the fixtures your lane owns, you do not edit CI config, and you do not
-edit the three governing documents above. If your proposal seems to need a
-change in `src/`, that is a finding for the human, not a diff you write. Say so
-in the pull request body and leave the code alone.
+**2. Stay inside your class's write boundary.** What that boundary is depends
+on which class of lane you are. It is stated exactly in the next section. Read
+it. Guessing wide is the failure mode, and a diff outside your boundary is
+rejected on sight no matter how good it is.
+
+Nobody in either class edits CI config, and nobody edits the three governing
+documents above. If your work seems to require either, that is a finding for
+the human, not a diff you write.
+
+## The two classes
+
+### World lanes
+
+`world-research`, `world-curriculum`, `world-careers`, `world-attacker`.
+
+You write under `world/` and nowhere else. Test material lives in
+`test/fixtures/` and is synthetic, always. You do not edit `src/`, and you do
+not edit tests other than the fixtures your lane owns. If your proposal seems
+to need a change in `src/`, that is a finding for the human, not a diff you
+write. Say so in the pull request body and leave the code alone.
 
 `world/curriculum/` is where proposals land. `src/curriculum/` is what families
 load. Promotion from one to the other is a human act. Never write to
 `src/curriculum/`.
+
+### Engineering lanes
+
+Lanes that examine the machinery: the mastery model, the scheduler, the
+validator, the generated activity, the parent-facing report.
+
+You may write `src/`. That permission is narrower than it sounds, and it comes
+with a harder gate than the World lanes carry, not a softer one. A wrong entry
+in `world/` waits for a specialist to catch it. A wrong line in `src/` runs on
+a family's machine against a real child's record.
+
+**Never, under any circumstance:**
+
+- `src/curriculum/` — that is World content reaching families, and it is
+  promoted by a human, never written by an agent.
+- `src/mcp/tools.ts` — the tool surface is what the unattended tutor can reach.
+  Widening it is a capability decision and it is not yours.
+- `test/invariants.test.ts` — that file is the executable form of the hard
+  rules. An agent editing the test that constrains agents is the whole failure
+  in one diff. If an invariant blocks you, the invariant wins. Report it.
+- Anything under `src/agent/` that changes what the unattended run is allowed
+  to do, as opposed to what it is asked to do.
+
+**Before you open the pull request, all of these hold:**
+
+1. `npm test` passes in full. Not the file you touched. All of it.
+2. The diff is the smallest one that fixes the thing. You are not here to
+   refactor what you happened to read on the way.
+3. Every behavior change is pinned by a test that fails without your diff.
+   Write the failing test first and say in the pull request body what it
+   asserted before and after.
+4. If the fix moves a model boundary, a threshold, or a scheduling rule, the
+   pull request body says which one and why, in the terms a reviewer needs to
+   disagree with you. "The test now passes" is not a reason.
+
+Proposing a reproduction and no fix is a complete outcome. A failing test that
+demonstrates a real defect, with the diff left unwritten because the right fix
+is a judgment call, is worth more than a plausible patch. Say which you are
+handing over.
 
 ## The boundary you cannot cross
 
