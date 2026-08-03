@@ -211,12 +211,23 @@ test('accommodated: three hard constraints, none of them enforced by the validat
   // Pinning the gap rather than asserting the guarantee. SPEC.md calls honoring
   // accommodations a hard constraint; validateInterface takes an HTML string and
   // never learns who it is for, so today the constraint lives only in the prompt.
-  // When accommodation-marshal closes this, the assertion below is what changes.
+  //
+  // Pinned by behavior, not by arity. Giving the validator a second parameter
+  // with a default leaves Function.length at 1, so an arity check would keep
+  // passing after the capability landed and would quietly assert nothing. That
+  // is the exact silent rot this corpus exists to prevent, so the pin is a page
+  // that violates a real accommodation and is currently accepted anyway.
   const { validateInterface } = await import('../src/surface/validate.ts');
+  const tiny = '<!doctype html><html lang="en"><head></head><body><p>go</p>' +
+    '<style>body{font-size:9px}</style>' +
+    '<script>primer.observe({skill:"s",correct:1});primer.done({});</script></body></html>';
+  const result = validateInterface(tiny) as { ok: boolean; unverifiable?: unknown[] };
+  assert.equal(result.ok, true, '9px text is accepted today for a child who needs 18px');
   assert.equal(
-    validateInterface.length,
-    1,
-    'validateInterface still takes only html; it cannot check accommodations it cannot see',
+    result.unverifiable,
+    undefined,
+    'nothing yet reports which accommodations went unchecked; when that lands, this test should ' +
+      'assert the guarantee instead of the gap',
   );
 });
 
