@@ -30,12 +30,11 @@ Three documents govern everything here and none of them is optional reading:
 
 ## The two standing rules
 
-**1. Propose via pull request only.** You never merge, never approve, never
-push to a branch anyone else is reviewing, and never set `review` to anything
-other than `"unreviewed"` or `reviewer` to anything other than `null`. A named
-human admits every change to The World. That is rule 7 in `CLAUDE.md` and no
-convenience, deadline, or clever workaround moves it. If a task appears to
-require merging, the task is wrong. Report that and stop.
+**1. Propose through pull requests.** You do not merge or approve on your own.
+A maintainer may explicitly direct a merge after validation. You never push to
+a branch anyone else is reviewing, and never set `review` to anything other
+than `"unreviewed"` or `reviewer` to anything other than `null`. A named human
+still decides what is admitted to The World.
 
 **2. Stay inside your class's write boundary.** What that boundary is depends
 on which class of lane you are. It is stated exactly in the next section. Read
