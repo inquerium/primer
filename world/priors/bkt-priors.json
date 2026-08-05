@@ -1,0 +1,62 @@
+{
+  "id": "priors/bkt",
+  "description": "Per-skill-type BKT and forgetting-curve priors. Starting points for `primer fit`, grouped by the answer format of the skill's probe. A skill maps to the first type listing its probe type; anything unlisted falls to the default type.",
+  "note": "These are principled defaults informed by the claims they cite, not fitted values. Fitted always beats prior: `primer fit` computed from a family's own evidence overwrites these and nothing here overwrites a fit.",
+  "provenance": {
+    "sources": [
+      "doi:10.1007/BF01099821",
+      "doi:10.18653/v1/P16-1174"
+    ],
+    "retrieved": "2026-07-30",
+    "agreement": 1,
+    "review": "unreviewed",
+    "reviewer": null,
+    "depends_on_claims": [
+      "bkt/four-parameter-model",
+      "spacing/half-life-growth"
+    ]
+  },
+  "skill_types": {
+    "two_choice": {
+      "probe_types": ["yes_no", "compare"],
+      "p_init": 0.15,
+      "p_guess": 0.45,
+      "p_slip": 0.1,
+      "p_learn": 0.2,
+      "half_life_days": 3.0,
+      "depends_on_claims": ["bkt/guess-two-choice", "bkt/identifiability", "spacing/half-life-growth"],
+      "rationale": "Two or three answers are on the table, so chance alone answers correctly near half the time. Guess sits just under the 0.5 ceiling that keeps the model identifiable."
+    },
+    "selected_response": {
+      "probe_types": ["choose", "classify", "match", "sort", "odd_one_out", "identify"],
+      "p_init": 0.15,
+      "p_guess": 0.25,
+      "p_slip": 0.1,
+      "p_learn": 0.2,
+      "half_life_days": 3.0,
+      "depends_on_claims": ["bkt/guess-two-choice", "spacing/half-life-growth"],
+      "rationale": "A small set of options to select among. Chance rate near one in four."
+    },
+    "performance": {
+      "probe_types": ["read_aloud", "timed_read", "retell", "read_then_retell", "discuss", "qa", "reason", "describe"],
+      "p_init": 0.15,
+      "p_guess": 0.1,
+      "p_slip": 0.15,
+      "p_learn": 0.2,
+      "half_life_days": 3.0,
+      "depends_on_claims": ["bkt/guess-two-choice", "spacing/half-life-growth"],
+      "rationale": "Extended performance scored against a rubric. Hard to pass by luck, but scoring noise and off days raise slip above the constructed-response prior."
+    },
+    "constructed_response": {
+      "default": true,
+      "probe_types": [],
+      "p_init": 0.15,
+      "p_guess": 0.05,
+      "p_slip": 0.1,
+      "p_learn": 0.2,
+      "half_life_days": 3.0,
+      "depends_on_claims": ["bkt/guess-two-choice", "spacing/half-life-growth"],
+      "rationale": "The child produces the answer: arithmetic, writing, decoding, counting. Producing the right answer without the skill is rare, so guess sits near zero. This is the default for any probe type not listed above."
+    }
+  }
+}

@@ -1,0 +1,4 @@
+# Gitignored files copied into each fresh OpenClaw-managed worktree, so a
+# proposal task starts with what a checkout needs. See docs/OPENCLAW.md.
+.env.local
+test/fixtures/generated/**
