@@ -103,12 +103,21 @@ export function nextTargets(learnerId: string, opts: TargetOptions = {}): Target
     const neverLanded = p < 0.25 && opportunities < 5;
     const reviewDue = Boolean(includeReview && m?.next_due && new Date(m.next_due) <= at);
 
-    if (opportunities >= 6 && p < 0.5) {
+    if (opportunities >= 6 && p < 0.5 && status !== 'lapsed') {
       // Checked before everything else. A failing skill's interval collapses to
       // hours, so if `review_due` is tested first this signal is visible for about
       // two hours after the session and then vanishes — meaning the tutor is told
       // "try something different" essentially never, since the next run is the next
       // day. A child failing repeatedly is the most important thing in the queue.
+      //
+      // But stuck means never landed, not held and then forgotten. Six tries is an
+      // ordinary number to learn something, so without the lapsed guard a child who
+      // mastered a skill in spring and took the summer off comes back reported as
+      // stuck: the tutor is told to change modality or drop to a prerequisite, when
+      // the right move is a two-minute review of something she used to know. The
+      // record already holds the distinction in `peak_p_known`, which is the only
+      // thing that can tell "lost it" from "never had it", and `statusOf` is where
+      // that reading lives.
       reason = 'stuck';
       priority = 0.95;
     } else if (m && status === 'lapsed') {
