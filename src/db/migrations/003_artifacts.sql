@@ -8,6 +8,22 @@
 -- reviewing an artifact writes evidence back the same way any other observation does
 -- (`observation.kind = 'artifact_review'`).
 
+-- Some early records predate the artifact table entirely. The baseline schema
+-- normally creates it before migrations run, but this keeps the upgrade safe
+-- when a record was made by an older standalone binary.
+CREATE TABLE IF NOT EXISTS artifact (
+  id         TEXT PRIMARY KEY,
+  learner_id TEXT NOT NULL REFERENCES learner(id) ON DELETE CASCADE,
+  session_id TEXT,
+  ts         TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  path       TEXT NOT NULL,
+  mime       TEXT,
+  caption    TEXT,
+  skill_ids  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_artifact_learner ON artifact(learner_id, ts DESC);
+
 ALTER TABLE artifact ADD COLUMN duration_ms INTEGER;
 ALTER TABLE artifact ADD COLUMN mime_type TEXT;
 ALTER TABLE artifact ADD COLUMN prompt TEXT;          -- what they were asked to read or do
