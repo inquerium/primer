@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isPackaged } from '../src/agent/claude-code.ts';
+import { diskAssetPaths } from '../src/db/index.ts';
 import { SCHEMA_SQL, RUNTIME_JS, MIGRATIONS, CURRICULUM } from '../src/generated/assets.ts';
 
 /**
@@ -21,6 +22,13 @@ test('running from source is not mistaken for a packaged binary', () => {
   // If this ever flips, the tutor tells Claude Code to launch the MCP server by
   // running the current executable with no script, and every unattended run dies.
   assert.equal(isPackaged(), false);
+});
+
+test('a packaged binary never reads schema or migrations beside itself', () => {
+  // A downloaded binary can sit in any directory. Neighbouring files belong to
+  // that directory, not to the release, and must not change a record migration.
+  assert.deepEqual(diskAssetPaths('schema.sql', true), []);
+  assert.deepEqual(diskAssetPaths('migrations', true), []);
 });
 
 test('every asset the installers download is one the release workflow builds', () => {

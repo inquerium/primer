@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { createRequire } from 'node:module';
 import { SCHEMA_SQL, MIGRATIONS } from '../generated/assets.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -42,18 +43,28 @@ export function closeDb(): void {
  * Disk first so an edit in a checkout takes effect immediately; the embedded copy
  * otherwise, so primer still starts when there is no source tree beside it.
  */
+function packaged(): boolean {
+  try {
+    return createRequire(import.meta.url)('node:sea').isSea();
+  } catch {
+    return false;
+  }
+}
+
+export function diskAssetPaths(name: string, isPackaged: boolean): string[] {
+  if (isPackaged) return [];
+  return [join(HERE, name), join(HERE, '..', '..', 'src', 'db', name)];
+}
+
 function schemaSql(): string {
-  for (const candidate of [join(HERE, 'schema.sql'), join(HERE, '..', '..', 'src', 'db', 'schema.sql')]) {
+  for (const candidate of diskAssetPaths('schema.sql', packaged())) {
     if (existsSync(candidate)) return readFileSync(candidate, 'utf8');
   }
   return SCHEMA_SQL;
 }
 
 function migrationsDir(): string | null {
-  for (const candidate of [
-    join(HERE, 'migrations'),
-    join(HERE, '..', '..', 'src', 'db', 'migrations'),
-  ]) {
+  for (const candidate of diskAssetPaths('migrations', packaged())) {
     if (existsSync(candidate)) return candidate;
   }
   return null;
