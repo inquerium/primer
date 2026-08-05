@@ -1,4 +1,10 @@
 import { Script } from 'node:vm';
+import {
+  checkAccommodations,
+  type ActiveAccommodation,
+  type AccommodationFinding,
+} from './accommodations.ts';
+import { reviewActivity } from './activity-review.ts';
 
 /**
  * Check a generated activity before a child can ever be shown it.
@@ -23,7 +29,23 @@ export interface ValidationResult {
   ok: boolean;
   errors: Finding[];
   warnings: Finding[];
+  /**
+   * Accommodations that could not be established from the source. Neither a
+   * pass nor a failure, and shown to the adult reviewing the queue, because a
+   * clean report on an unexamined constraint is how a reviewer is misled.
+   */
+  unverifiable: Finding[];
   stats: { bytes: number; scripts: number; observeCalls: number };
+}
+
+export interface ValidateOptions {
+  /**
+   * This child's standing instructions. Absent means nobody said, which is not
+   * the same as nobody has any: `save_interface` always passes them, and a
+   * caller that omits them gets no accommodation checking and is told nothing
+   * about accommodations either way.
+   */
+  accommodations?: ActiveAccommodation[];
 }
 
 const MAX_BYTES = 400_000;
@@ -33,9 +55,10 @@ const EXTERNAL_URL = /(?:src|href)\s*=\s*["']\s*(https?:)?\/\//i;
 const EXTERNAL_FETCH = /(?:fetch|XMLHttpRequest|importScripts)\s*\(\s*["'`]\s*(?:https?:)?\/\//i;
 const CSS_IMPORT = /@import\s+(?:url\()?["']?\s*(?:https?:)?\/\//i;
 
-export function validateInterface(html: string): ValidationResult {
+export function validateInterface(html: string, opts: ValidateOptions = {}): ValidationResult {
   const errors: Finding[] = [];
   const warnings: Finding[] = [];
+  const unverifiable: Finding[] = [];
 
   const bytes = Buffer.byteLength(html, 'utf8');
   const scripts = extractScripts(html);
@@ -46,7 +69,7 @@ export function validateInterface(html: string): ValidationResult {
 
   if (!html.trim()) {
     errors.push({ rule: 'empty', message: 'The activity is empty.' });
-    return { ok: false, errors, warnings, stats: { bytes, scripts: 0, observeCalls: 0 } };
+    return { ok: false, errors, warnings, unverifiable, stats: { bytes, scripts: 0, observeCalls: 0 } };
   }
 
   if (!/<body[\s>]/i.test(html) && !/<html[\s>]/i.test(html)) {
@@ -166,7 +189,43 @@ export function validateInterface(html: string): ValidationResult {
     });
   }
 
-  return { ok: errors.length === 0, errors, warnings, stats: { bytes, scripts: scripts.length, observeCalls } };
+  /* --------------------------------------------------- what it does to a child -- */
+
+  // Hard rule 5 and the evidence contract. Both were prompt-only until now: the
+  // tutor was asked not to build a streak counter, and asked to record what the
+  // child said, and nothing checked either.
+  const review = reviewActivity(html);
+  for (const r of review.refusals) {
+    errors.push({ rule: `activity:${r.rule}`, message: r.message, hint: r.hint });
+  }
+  for (const f of review.flags) {
+    warnings.push({ rule: `activity:${f.rule}`, message: f.message, hint: f.hint });
+  }
+
+  /* ------------------------------------------------------ accommodations -- */
+
+  // SPEC.md calls these a hard constraint rather than a hint, so a violation
+  // blocks the save the same way a syntax error does. The tutor is told what it
+  // broke and retries; a child never meets the version that ignored them.
+  if (opts.accommodations?.length) {
+    const acc = checkAccommodations(html, opts.accommodations);
+    const asFinding = (f: AccommodationFinding): Finding => ({
+      rule: `accommodation:${f.rule}`,
+      message: f.message,
+      hint: f.hint,
+    });
+    errors.push(...acc.errors.map(asFinding));
+    warnings.push(...acc.warnings.map(asFinding));
+    unverifiable.push(...acc.unverifiable.map(asFinding));
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    warnings,
+    unverifiable,
+    stats: { bytes, scripts: scripts.length, observeCalls },
+  };
 }
 
 /** Inline script bodies only; a src= script is caught by the external-request rule. */
@@ -220,6 +279,12 @@ export function explain(result: ValidationResult): string {
   if (result.warnings.length) {
     lines.push(result.errors.length ? 'Also worth fixing:' : 'Saved, but worth knowing:');
     for (const w of result.warnings) lines.push(`  - ${w.message}${w.hint ? ` ${w.hint}` : ''}`);
+  }
+  if (result.unverifiable?.length) {
+    // Said plainly, because the difference between "checked and fine" and "not
+    // checked" is the whole value of reporting it at all.
+    lines.push('Not checked, and an adult has to look:');
+    for (const u of result.unverifiable) lines.push(`  - ${u.message}${u.hint ? ` ${u.hint}` : ''}`);
   }
   return lines.join('\n');
 }

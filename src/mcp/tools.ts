@@ -10,6 +10,7 @@ import {
   resolveLearner,
   noteInterest,
   addAccommodation,
+  accommodations,
 } from '../record/learners.ts';
 import {
   recordObservations,
@@ -529,7 +530,14 @@ export const TOOLS: ToolDef[] = [
 
       // Checked before it can be saved, let alone queued. A child running this
       // has no console and no way to tell anyone it broke.
-      const check = validateInterface(a.html ?? '');
+      //
+      // The accommodations go in because SPEC.md calls honoring them a hard
+      // constraint, and a constraint the validator cannot see is a constraint
+      // enforced by the tutor remembering. Anything it cannot establish from
+      // the source comes back as unverifiable rather than as a pass.
+      const check = validateInterface(a.html ?? '', {
+        accommodations: accommodations(learner.id),
+      });
       if (!check.ok) {
         return {
           saved: false,

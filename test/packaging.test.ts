@@ -130,3 +130,21 @@ test('the packaging script bundles for the runtime that actually loads it', () =
   // uses it to locate its own assets, so every such call throws on load.
   assert.match(script, /--define:import\.meta\.url=/);
 });
+
+test('the packaging script executes esbuild as a native binary', () => {
+  const script = read('scripts/package.mjs');
+  assert.match(
+    script,
+    /execFileSync\(\s*join\(root, 'node_modules', 'esbuild', 'bin', 'esbuild'\),/s,
+    'esbuild is a native executable, not a JavaScript file for Node to parse',
+  );
+});
+
+test('the copied Node executable is writable before postject injects it', () => {
+  const script = read('scripts/package.mjs');
+  assert.match(
+    script,
+    /chmodSync\(target, 0o755\);/,
+    'postject must be able to write into the copied Node executable',
+  );
+});

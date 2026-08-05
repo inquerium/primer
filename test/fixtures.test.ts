@@ -198,7 +198,7 @@ test('vowel-confuser: the misconception is in the responses, and nothing has lab
   assert.equal(labelled, 0, 'the corpus must not hand the miner its own answer');
 });
 
-test('accommodated: three hard constraints, none of them enforced by the validator', async () => {
+test('accommodated: three hard constraints are enforced by the validator', async () => {
   const { learner_id } = buildPersona('accommodated');
   const ctx = learnerContext(learner_id, { at: AS_OF });
 
@@ -208,27 +208,15 @@ test('accommodated: three hard constraints, none of them enforced by the validat
     assert.ok(a.detail && a.detail.length > 20, `${a.kind} needs actionable detail, not a label`);
   }
 
-  // Pinning the gap rather than asserting the guarantee. SPEC.md calls honoring
-  // accommodations a hard constraint; validateInterface takes an HTML string and
-  // never learns who it is for, so today the constraint lives only in the prompt.
-  //
-  // Pinned by behavior, not by arity. Giving the validator a second parameter
-  // with a default leaves Function.length at 1, so an arity check would keep
-  // passing after the capability landed and would quietly assert nothing. That
-  // is the exact silent rot this corpus exists to prevent, so the pin is a page
-  // that violates a real accommodation and is currently accepted anyway.
+  // This is a page the prompt used to be trusted to catch. The validator must
+  // now receive this child's instructions and refuse it on their behalf.
   const { validateInterface } = await import('../src/surface/validate.ts');
   const tiny = '<!doctype html><html lang="en"><head></head><body><p>go</p>' +
     '<style>body{font-size:9px}</style>' +
     '<script>primer.observe({skill:"s",correct:1});primer.done({});</script></body></html>';
-  const result = validateInterface(tiny) as { ok: boolean; unverifiable?: unknown[] };
-  assert.equal(result.ok, true, '9px text is accepted today for a child who needs 18px');
-  assert.equal(
-    result.unverifiable,
-    undefined,
-    'nothing yet reports which accommodations went unchecked; when that lands, this test should ' +
-      'assert the guarantee instead of the gap',
-  );
+  const result = validateInterface(tiny, { accommodations: ctx.accommodations });
+  assert.equal(result.ok, false, '9px text must be refused for a child who needs accessible typography');
+  assert.ok(result.errors.some((e) => e.rule === 'accommodation:text_too_small'));
 });
 
 test('above-band: upstream skills are demoted, never walled off', () => {

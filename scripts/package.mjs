@@ -15,7 +15,7 @@
  *   node scripts/package.mjs --binary # bundle, then build the executable
  */
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, rmSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,9 +32,8 @@ mkdirSync(build, { recursive: true });
 // "module"` on the current LTS, and an ESM entry point fails at runtime with
 // "Cannot use import statement outside a module".
 execFileSync(
-  process.execPath,
+  join(root, 'node_modules', 'esbuild', 'bin', 'esbuild'),
   [
-    join(root, 'node_modules', 'esbuild', 'bin', 'esbuild'),
     join(root, 'src', 'cli.ts'),
     '--bundle',
     '--platform=node',
@@ -94,6 +93,7 @@ execFileSync(process.execPath, ['--experimental-sea-config', 'sea-config.json'],
 const windows = process.platform === 'win32';
 const target = join(build, windows ? 'primer.exe' : 'primer');
 copyFileSync(process.execPath, target);
+chmodSync(target, 0o755);
 
 // macOS refuses to run an arm64 binary whose signature no longer matches, and
 // injection invalidates whatever signature node arrived with.
